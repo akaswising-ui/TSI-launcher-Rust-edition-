@@ -124,7 +124,7 @@ jobs:
           unzip -l "$APK" | grep -q 'assets/horizon.zip'
           unzip -l "$APK" | grep -q 'assets/jre-25.zip'
           unzip -l "$APK" | grep -q 'assets/tsi-orbit-license.txt'
-          BADGING="$ANDROID_HOME/build-tools/35.0.0/aapt dump badging "$APK""
+          BADGING="$("$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK")"
           echo "$BADGING" | grep -q "package: name='com.tsi.orbit'"
           echo "$BADGING" | grep -q "application-label:'TSI Orbit'"
           echo "Verified playable ARM64 APK: $APK"
