@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ENGINE="$ROOT/vendor/horizon-android"
-OUTPUT="$ROOT/build/TSI-Orbit-Rust-ARM64.apk"
+OUTPUT="$ROOT/build/TSI-Orbit-Game-ARM64.apk"
 
 if [[ ! -f "$ENGINE/android/build.sh" ]]; then
   echo "Pinned engine submodule is missing. Clone with: git submodule update --init --recursive" >&2
@@ -33,4 +33,4 @@ fi
 
 mkdir -p "$(dirname "$OUTPUT")"
 cp "$SOURCE_APK" "$OUTPUT"
-echo "Built playable Rust game client APK: $OUTPUT"
+echo "Built playable Horizon Java Edition game client APK: $OUTPUT"
