@@ -43,7 +43,11 @@ impl Page {
     ];
 
     fn title(self) -> &'static str {
-        Self::ALL.iter().find(|(page, _, _)| *page == self).map(|(_, title, _)| *title).unwrap_or("Home")
+        Self::ALL
+            .iter()
+            .find(|(page, _, _)| *page == self)
+            .map(|(_, title, _)| *title)
+            .unwrap_or("Home")
     }
 }
 
@@ -108,7 +112,8 @@ pub struct LauncherApp {
 impl LauncherApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         configure_theme(&cc.egui_ctx);
-        let saved = cc.storage
+        let saved = cc
+            .storage
             .and_then(|storage| eframe::get_value::<SavedState>(storage, "tsi_orbit_state"))
             .unwrap_or_default();
 
@@ -149,7 +154,12 @@ impl LauncherApp {
                 brand_mark(ui);
                 ui.vertical(|ui| {
                     ui.label(RichText::new("TSI ORBIT").size(16.0).strong().color(TEXT));
-                    ui.label(RichText::new("RUST EDITION").size(10.0).color(TEAL).strong());
+                    ui.label(
+                        RichText::new("RUST EDITION")
+                            .size(10.0)
+                            .color(TEAL)
+                            .strong(),
+                    );
                 });
             });
             ui.add_space(20.0);
@@ -165,7 +175,11 @@ impl LauncherApp {
                             .size(13.0)
                             .color(if selected { TEAL } else { TEXT }),
                     )
-                    .fill(if selected { Color32::from_rgb(24, 62, 64) } else { PANEL })
+                    .fill(if selected {
+                        Color32::from_rgb(24, 62, 64)
+                    } else {
+                        PANEL
+                    })
                     .stroke(Stroke::new(1.0, if selected { TEAL } else { PANEL })),
                 );
                 if response.clicked() {
@@ -175,13 +189,31 @@ impl LauncherApp {
 
             ui.add_space(18.0);
             panel(ui, |ui| {
-                ui.label(RichText::new("ACTIVE PROFILE").size(10.0).color(MUTED).strong());
-                ui.label(RichText::new(&self.saved.profile_name).size(14.0).strong().color(TEXT));
+                ui.label(
+                    RichText::new("ACTIVE PROFILE")
+                        .size(10.0)
+                        .color(MUTED)
+                        .strong(),
+                );
+                ui.label(
+                    RichText::new(&self.saved.profile_name)
+                        .size(14.0)
+                        .strong()
+                        .color(TEXT),
+                );
                 ui.label(RichText::new("Local profile").size(11.0).color(MUTED));
             });
             ui.with_layout(Layout::bottom_up(Align::Min), |ui| {
-                ui.label(RichText::new("Independent project · no Mojang affiliation").size(9.0).color(MUTED));
-                ui.label(RichText::new("BUILD 0.1.0 · UI PREVIEW").size(10.0).color(TEAL));
+                ui.label(
+                    RichText::new("Independent project · no Mojang affiliation")
+                        .size(9.0)
+                        .color(MUTED),
+                );
+                ui.label(
+                    RichText::new("BUILD 0.1.0 · UI PREVIEW")
+                        .size(10.0)
+                        .color(TEAL),
+                );
             });
         });
     }
@@ -190,15 +222,22 @@ impl LauncherApp {
         ui.horizontal_wrapped(|ui| {
             for (page, title, icon) in Page::ALL {
                 let selected = self.page == page;
-                if ui.add(
-                    egui::Button::new(
-                        RichText::new(format!("{icon} {title}"))
-                            .size(11.0)
-                            .color(if selected { TEAL } else { TEXT }),
+                if ui
+                    .add(
+                        egui::Button::new(
+                            RichText::new(format!("{icon} {title}"))
+                                .size(11.0)
+                                .color(if selected { TEAL } else { TEXT }),
+                        )
+                        .fill(if selected {
+                            Color32::from_rgb(24, 62, 64)
+                        } else {
+                            PANEL
+                        })
+                        .stroke(Stroke::new(1.0, if selected { TEAL } else { EDGE })),
                     )
-                    .fill(if selected { Color32::from_rgb(24, 62, 64) } else { PANEL })
-                    .stroke(Stroke::new(1.0, if selected { TEAL } else { EDGE })),
-                ).clicked() {
+                    .clicked()
+                {
                     self.navigate(page);
                 }
             }
@@ -206,10 +245,25 @@ impl LauncherApp {
     }
 
     fn home_page(&mut self, ui: &mut egui::Ui) {
-        ui.label(RichText::new("YOUR GAME SPACE").size(11.0).strong().color(TEAL));
-        ui.heading(RichText::new("A cleaner way to launch.").size(28.0).strong().color(TEXT));
-        ui.label(RichText::new("Manage profiles, worlds, packs, mods and servers from one Rust-native hub.")
-            .size(13.0).color(MUTED));
+        ui.label(
+            RichText::new("YOUR GAME SPACE")
+                .size(11.0)
+                .strong()
+                .color(TEAL),
+        );
+        ui.heading(
+            RichText::new("A cleaner way to launch.")
+                .size(28.0)
+                .strong()
+                .color(TEXT),
+        );
+        ui.label(
+            RichText::new(
+                "Manage profiles, worlds, packs, mods and servers from one Rust-native hub.",
+            )
+            .size(13.0)
+            .color(MUTED),
+        );
         ui.add_space(12.0);
 
         hero_card(ui, |ui| {
@@ -217,17 +271,30 @@ impl LauncherApp {
                 ui.vertical(|ui| {
                     status_chip(ui, "ENGINE NOT CONNECTED", AMBER);
                     ui.add_space(8.0);
-                    ui.label(RichText::new("TSI ORBIT CLIENT").size(23.0).strong().color(TEXT));
-                    ui.label(RichText::new("A new native Rust game runtime is planned as a separate component.")
-                        .size(12.0).color(MUTED));
+                    ui.label(
+                        RichText::new("TSI ORBIT CLIENT")
+                            .size(23.0)
+                            .strong()
+                            .color(TEXT),
+                    );
+                    ui.label(
+                        RichText::new(
+                            "A new native Rust game runtime is planned as a separate component.",
+                        )
+                        .size(12.0)
+                        .color(MUTED),
+                    );
                     ui.add_space(12.0);
                     ui.horizontal(|ui| {
                         let response = ui.add_enabled(
                             false,
-                            egui::Button::new(RichText::new("▶  PLAY").strong().color(Color32::BLACK))
-                                .fill(TEAL),
+                            egui::Button::new(
+                                RichText::new("▶  PLAY").strong().color(Color32::BLACK),
+                            )
+                            .fill(TEAL),
                         );
-                        response.on_hover_text("Play activates after a game runtime is integrated.");
+                        response
+                            .on_hover_text("Play activates after a game runtime is integrated.");
                         if ui.button("Open Versions").clicked() {
                             self.navigate(Page::Versions);
                         }
@@ -241,10 +308,34 @@ impl LauncherApp {
 
         ui.add_space(16.0);
         ui.horizontal_wrapped(|ui| {
-            metric_card(ui, "PROFILES", self.saved.profiles.len().to_string(), "Local player identities", TEAL);
-            metric_card(ui, "SERVERS", self.saved.servers.len().to_string(), "Saved addresses", BLUE);
-            metric_card(ui, "NATIVE MOD URLS", self.saved.mod_urls.len().to_string(), "Queued for integration", AMBER);
-            metric_card(ui, "RESOURCE PACKS", self.saved.pack_names.len().to_string(), "Local catalogue entries", ROSE);
+            metric_card(
+                ui,
+                "PROFILES",
+                self.saved.profiles.len().to_string(),
+                "Local player identities",
+                TEAL,
+            );
+            metric_card(
+                ui,
+                "SERVERS",
+                self.saved.servers.len().to_string(),
+                "Saved addresses",
+                BLUE,
+            );
+            metric_card(
+                ui,
+                "NATIVE MOD URLS",
+                self.saved.mod_urls.len().to_string(),
+                "Queued for integration",
+                AMBER,
+            );
+            metric_card(
+                ui,
+                "RESOURCE PACKS",
+                self.saved.pack_names.len().to_string(),
+                "Local catalogue entries",
+                ROSE,
+            );
         });
 
         ui.add_space(12.0);
@@ -252,10 +343,18 @@ impl LauncherApp {
             ui.vertical(|ui| {
                 section_title(ui, "QUICK ACCESS", "Jump into a workspace");
                 ui.horizontal_wrapped(|ui| {
-                    quick_action(ui, "Versions", "Build channels and install state", || self.navigate(Page::Versions));
-                    quick_action(ui, "Worlds", "World library and backups", || self.navigate(Page::Worlds));
-                    quick_action(ui, "Mods", "Native Rust add-ons", || self.navigate(Page::Mods));
-                    quick_action(ui, "Controls", "Touch layout editor", || self.navigate(Page::Controls));
+                    quick_action(ui, "Versions", "Build channels and install state", || {
+                        self.navigate(Page::Versions)
+                    });
+                    quick_action(ui, "Worlds", "World library and backups", || {
+                        self.navigate(Page::Worlds)
+                    });
+                    quick_action(ui, "Mods", "Native Rust add-ons", || {
+                        self.navigate(Page::Mods)
+                    });
+                    quick_action(ui, "Controls", "Touch layout editor", || {
+                        self.navigate(Page::Controls)
+                    });
                 });
             });
         });
@@ -278,8 +377,12 @@ impl LauncherApp {
         panel(ui, |ui| {
             status_chip(ui, "NOT INSTALLED", AMBER);
             ui.add_space(8.0);
-            ui.label(RichText::new("Runtime integration is not part of this UI foundation yet.")
-                .size(15.0).strong().color(TEXT));
+            ui.label(
+                RichText::new("Runtime integration is not part of this UI foundation yet.")
+                    .size(15.0)
+                    .strong()
+                    .color(TEXT),
+            );
             ui.label(RichText::new("The Horizon feature model separates launcher responsibilities from the Rust game engine. TSI Orbit will keep that boundary explicit rather than showing a fake Play result.")
                 .size(12.0).color(MUTED));
             ui.add_space(8.0);
@@ -288,40 +391,87 @@ impl LauncherApp {
         });
         section_title(ui, "RUN CONFIGURATION", "Planned launch inputs");
         info_row(ui, "Profile", &self.saved.profile_name, "Local identity");
-        info_row(ui, "Graphics", "Adapter default", "Renderer selection not connected");
+        info_row(
+            ui,
+            "Graphics",
+            "Adapter default",
+            "Renderer selection not connected",
+        );
         info_row(ui, "Input", &self.saved.touch_scheme, "Saved touch preset");
-        info_row(ui, "Game files", "Not present", "No copyrighted game data is bundled");
+        info_row(
+            ui,
+            "Game files",
+            "Not present",
+            "No copyrighted game data is bundled",
+        );
     }
 
     fn versions_page(&mut self, ui: &mut egui::Ui) {
         section_title(ui, "VERSIONS", "Builds and runtime channels");
         panel(ui, |ui| {
-            ui.label(RichText::new("No client build is installed yet.").size(15.0).strong().color(TEXT));
+            ui.label(
+                RichText::new("No client build is installed yet.")
+                    .size(15.0)
+                    .strong()
+                    .color(TEXT),
+            );
             ui.label(RichText::new("This page will list only verified TSI engine builds with checksums and matching Android ABI. Minecraft Java files must come from an authorised copy/source.")
                 .size(12.0).color(MUTED));
         });
         section_title(ui, "CHANNELS", "Independent update tracks");
-        channel_card(ui, "STABLE", "Signed, tested releases", "Not published", TEAL);
-        channel_card(ui, "NIGHTLY", "Development snapshots", "Not published", BLUE);
-        channel_card(ui, "COMPATIBILITY", "Game version support", "Requires engine test matrix", AMBER);
+        channel_card(
+            ui,
+            "STABLE",
+            "Signed, tested releases",
+            "Not published",
+            TEAL,
+        );
+        channel_card(
+            ui,
+            "NIGHTLY",
+            "Development snapshots",
+            "Not published",
+            BLUE,
+        );
+        channel_card(
+            ui,
+            "COMPATIBILITY",
+            "Game version support",
+            "Requires engine test matrix",
+            AMBER,
+        );
     }
 
     fn worlds_page(&mut self, ui: &mut egui::Ui) {
         section_title(ui, "WORLDS", "World library");
         panel(ui, |ui| {
-            ui.label(RichText::new("No world folders are indexed.").size(15.0).strong().color(TEXT));
+            ui.label(
+                RichText::new("No world folders are indexed.")
+                    .size(15.0)
+                    .strong()
+                    .color(TEXT),
+            );
             ui.label(RichText::new("The next storage module will use Android's document picker for user-selected import/export. It will not scan unrelated phone folders.")
                 .size(12.0).color(MUTED));
             ui.add_space(8.0);
-            ui.label(RichText::new("Backup flow planned: select world → create archive → verify → export.")
-                .size(11.0).color(TEAL));
+            ui.label(
+                RichText::new(
+                    "Backup flow planned: select world → create archive → verify → export.",
+                )
+                .size(11.0)
+                .color(TEAL),
+            );
         });
     }
 
     fn mods_page(&mut self, ui: &mut egui::Ui) {
         section_title(ui, "NATIVE MODS", "Rust extension packages");
         panel(ui, |ui| {
-            ui.label(RichText::new("Add a direct HTTPS .hmod source").strong().color(TEXT));
+            ui.label(
+                RichText::new("Add a direct HTTPS .hmod source")
+                    .strong()
+                    .color(TEXT),
+            );
             ui.horizontal(|ui| {
                 ui.add(egui::TextEdit::singleline(&mut self.draft_mod_url)
                     .hint_text("https://host.example/mod.hmod")
@@ -337,29 +487,44 @@ impl LauncherApp {
                     }
                 }
             });
-            ui.label(RichText::new("Queueing only saves the URL. It does not download or execute code.")
-                .size(10.0).color(MUTED));
+            ui.label(
+                RichText::new("Queueing only saves the URL. It does not download or execute code.")
+                    .size(10.0)
+                    .color(MUTED),
+            );
         });
         section_title(ui, "QUEUED SOURCES", "Local list");
         if self.saved.mod_urls.is_empty() {
-            empty_state(ui, "No native mods queued", "Java .jar mods are not native Rust mods and will not be shown as compatible.");
+            empty_state(
+                ui,
+                "No native mods queued",
+                "Java .jar mods are not native Rust mods and will not be shown as compatible.",
+            );
         } else {
             let mut remove_index = None;
             for (index, url) in self.saved.mod_urls.iter().enumerate() {
                 ui.horizontal(|ui| {
                     ui.label(RichText::new("◇").color(TEAL));
                     ui.label(RichText::new(url).color(TEXT).size(11.0));
-                    if ui.small_button("Remove").clicked() { remove_index = Some(index); }
+                    if ui.small_button("Remove").clicked() {
+                        remove_index = Some(index);
+                    }
                 });
             }
-            if let Some(index) = remove_index { self.saved.mod_urls.remove(index); }
+            if let Some(index) = remove_index {
+                self.saved.mod_urls.remove(index);
+            }
         }
     }
 
     fn packs_page(&mut self, ui: &mut egui::Ui) {
         section_title(ui, "RESOURCE PACKS", "Verified visual content");
         panel(ui, |ui| {
-            ui.label(RichText::new("Create a local catalogue entry").strong().color(TEXT));
+            ui.label(
+                RichText::new("Create a local catalogue entry")
+                    .strong()
+                    .color(TEXT),
+            );
             ui.horizontal(|ui| {
                 ui.add(egui::TextEdit::singleline(&mut self.draft_pack)
                     .hint_text("Pack name")
@@ -375,17 +540,25 @@ impl LauncherApp {
             });
         });
         if self.saved.pack_names.is_empty() {
-            empty_state(ui, "No resource packs listed", "The future pack manager will verify every downloaded file against a pinned checksum.");
+            empty_state(
+                ui,
+                "No resource packs listed",
+                "The future pack manager will verify every downloaded file against a pinned checksum.",
+            );
         } else {
             let mut remove_index = None;
             for (index, name) in self.saved.pack_names.iter().enumerate() {
                 ui.horizontal(|ui| {
                     ui.label(RichText::new("▧").color(BLUE));
                     ui.label(RichText::new(name).color(TEXT));
-                    if ui.small_button("Remove").clicked() { remove_index = Some(index); }
+                    if ui.small_button("Remove").clicked() {
+                        remove_index = Some(index);
+                    }
                 });
             }
-            if let Some(index) = remove_index { self.saved.pack_names.remove(index); }
+            if let Some(index) = remove_index {
+                self.saved.pack_names.remove(index);
+            }
         }
     }
 
@@ -394,24 +567,35 @@ impl LauncherApp {
         panel(ui, |ui| {
             ui.label(RichText::new("Save a server address").strong().color(TEXT));
             ui.horizontal(|ui| {
-                ui.add(egui::TextEdit::singleline(&mut self.draft_server)
-                    .hint_text("play.example.net:25565")
-                    .desired_width(ui.available_width() - 92.0));
+                ui.add(
+                    egui::TextEdit::singleline(&mut self.draft_server)
+                        .hint_text("play.example.net:25565")
+                        .desired_width(ui.available_width() - 92.0),
+                );
                 if ui.button("Add server").clicked() {
                     let address = self.draft_server.trim();
                     if valid_server_address(address) {
-                        self.saved.servers.push(ServerEntry { address: address.to_owned() });
+                        self.saved.servers.push(ServerEntry {
+                            address: address.to_owned(),
+                        });
                         self.draft_server.clear();
-                        self.notice = "Server address saved. Network protocol connection is not wired yet.".to_owned();
+                        self.notice =
+                            "Server address saved. Network protocol connection is not wired yet."
+                                .to_owned();
                     } else {
-                        self.notice = "Use a hostname or IP address, optionally followed by :port.".to_owned();
+                        self.notice = "Use a hostname or IP address, optionally followed by :port."
+                            .to_owned();
                     }
                 }
             });
         });
         section_title(ui, "SAVED SERVERS", "Your list stays on this device");
         if self.saved.servers.is_empty() {
-            empty_state(ui, "No servers saved", "Add an address above. Joining becomes available when the Rust network client is integrated.");
+            empty_state(
+                ui,
+                "No servers saved",
+                "Add an address above. Joining becomes available when the Rust network client is integrated.",
+            );
         } else {
             let mut remove_index = None;
             for (index, server) in self.saved.servers.iter().enumerate() {
@@ -420,16 +604,24 @@ impl LauncherApp {
                         ui.label(RichText::new("◎").size(18.0).color(TEAL));
                         ui.vertical(|ui| {
                             ui.label(RichText::new(&server.address).strong().color(TEXT));
-                            ui.label(RichText::new("Saved · not connected").size(10.0).color(MUTED));
+                            ui.label(
+                                RichText::new("Saved · not connected")
+                                    .size(10.0)
+                                    .color(MUTED),
+                            );
                         });
                         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                            if ui.small_button("Remove").clicked() { remove_index = Some(index); }
+                            if ui.small_button("Remove").clicked() {
+                                remove_index = Some(index);
+                            }
                             ui.add_enabled(false, egui::Button::new("Join"));
                         });
                     });
                 });
             }
-            if let Some(index) = remove_index { self.saved.servers.remove(index); }
+            if let Some(index) = remove_index {
+                self.saved.servers.remove(index);
+            }
         }
     }
 
@@ -454,12 +646,22 @@ impl LauncherApp {
             });
             ui.checkbox(&mut self.saved.movement_360, "360° analog movement");
             ui.checkbox(&mut self.saved.vibration, "Phone vibration");
-            ui.add(egui::Slider::new(&mut self.saved.button_scale, 0.70..=1.50).text("Button scale"));
-            ui.add(egui::Slider::new(&mut self.saved.button_opacity, 0.20..=1.00).text("Button opacity"));
+            ui.add(
+                egui::Slider::new(&mut self.saved.button_scale, 0.70..=1.50).text("Button scale"),
+            );
+            ui.add(
+                egui::Slider::new(&mut self.saved.button_opacity, 0.20..=1.00)
+                    .text("Button opacity"),
+            );
         });
         panel(ui, |ui| {
             ui.label(RichText::new("Live preview").strong().color(TEXT));
-            touch_preview(ui, &self.saved.touch_scheme, self.saved.button_scale, self.saved.button_opacity);
+            touch_preview(
+                ui,
+                &self.saved.touch_scheme,
+                self.saved.button_scale,
+                self.saved.button_opacity,
+            );
             ui.label(RichText::new("The preference editor is interactive; game input injection is not connected until the engine module is added.")
                 .size(10.0).color(MUTED));
         });
@@ -468,7 +670,11 @@ impl LauncherApp {
     fn accounts_page(&mut self, ui: &mut egui::Ui) {
         section_title(ui, "ACCOUNTS", "Player identities");
         panel(ui, |ui| {
-            ui.label(RichText::new("Active local profile").size(11.0).color(MUTED));
+            ui.label(
+                RichText::new("Active local profile")
+                    .size(11.0)
+                    .color(MUTED),
+            );
             egui::ComboBox::from_id_salt("profile_select")
                 .selected_text(&self.saved.profile_name)
                 .show_ui(ui, |ui| {
@@ -478,12 +684,16 @@ impl LauncherApp {
                 });
             ui.add_space(8.0);
             ui.horizontal(|ui| {
-                ui.add(egui::TextEdit::singleline(&mut self.draft_profile)
-                    .hint_text("New offline name")
-                    .desired_width(ui.available_width() - 92.0));
+                ui.add(
+                    egui::TextEdit::singleline(&mut self.draft_profile)
+                        .hint_text("New offline name")
+                        .desired_width(ui.available_width() - 92.0),
+                );
                 if ui.button("Add profile").clicked() {
                     let name = self.draft_profile.trim();
-                    if !name.is_empty() && !self.saved.profiles.iter().any(|existing| existing == name) {
+                    if !name.is_empty()
+                        && !self.saved.profiles.iter().any(|existing| existing == name)
+                    {
                         self.saved.profiles.push(name.to_owned());
                         self.saved.profile_name = name.to_owned();
                         self.draft_profile.clear();
@@ -506,7 +716,12 @@ impl LauncherApp {
         section_title(ui, "DOWNLOADS", "Verified transfer queue");
         panel(ui, |ui| {
             status_chip(ui, "NO ACTIVE TRANSFERS", BLUE);
-            ui.label(RichText::new("The download service is not connected yet.").size(15.0).strong().color(TEXT));
+            ui.label(
+                RichText::new("The download service is not connected yet.")
+                    .size(15.0)
+                    .strong()
+                    .color(TEXT),
+            );
             ui.label(RichText::new("The planned pipeline verifies HTTPS source, expected file size and SHA-256 before a resource or client build is marked installed. Interrupted downloads must resume from verified byte ranges.")
                 .size(12.0).color(MUTED));
         });
@@ -516,12 +731,26 @@ impl LauncherApp {
         section_title(ui, "SETTINGS", "Rendering and application preferences");
         panel(ui, |ui| {
             ui.label(RichText::new("Rendering").strong().color(TEXT));
-            ui.label(RichText::new("UI renderer: eframe / egui. Game renderer: not connected.").size(11.0).color(MUTED));
-            ui.add(egui::Slider::new(&mut self.saved.resolution_scale, 50.0..=100.0).text("Resolution scale"));
+            ui.label(
+                RichText::new("UI renderer: eframe / egui. Game renderer: not connected.")
+                    .size(11.0)
+                    .color(MUTED),
+            );
+            ui.add(
+                egui::Slider::new(&mut self.saved.resolution_scale, 50.0..=100.0)
+                    .text("Resolution scale"),
+            );
             ui.checkbox(&mut self.saved.vsync, "VSync preference");
-            ui.add(egui::Slider::new(&mut self.saved.fps_limit, 30..=240).text("Frame cap preference"));
-            ui.label(RichText::new("These are saved preferences, not live Vulkan/game-engine controls yet.")
-                .size(10.0).color(MUTED));
+            ui.add(
+                egui::Slider::new(&mut self.saved.fps_limit, 30..=240).text("Frame cap preference"),
+            );
+            ui.label(
+                RichText::new(
+                    "These are saved preferences, not live Vulkan/game-engine controls yet.",
+                )
+                .size(10.0)
+                .color(MUTED),
+            );
         });
         panel(ui, |ui| {
             ui.label(RichText::new("Privacy and storage").strong().color(TEXT));
@@ -664,7 +893,11 @@ fn orbit_art(ui: &mut egui::Ui, size: Vec2) {
     let center = rect.center();
     let painter = ui.painter();
     painter.circle_filled(center, 48.0, Color32::from_rgb(23, 83, 82));
-    painter.circle_stroke(center, 54.0, Stroke::new(1.3, Color32::from_rgb(54, 136, 133)));
+    painter.circle_stroke(
+        center,
+        54.0,
+        Stroke::new(1.3, Color32::from_rgb(54, 136, 133)),
+    );
     painter.circle_stroke(center, 37.0, Stroke::new(2.0, TEAL));
     painter.circle_filled(center + Vec2::new(31.0, -26.0), 6.0, AMBER);
     painter.circle_filled(center + Vec2::new(-39.0, 20.0), 4.0, BLUE);
@@ -674,7 +907,12 @@ fn orbit_art(ui: &mut egui::Ui, size: Vec2) {
 
 fn status_chip(ui: &mut egui::Ui, label: &str, color: Color32) {
     egui::Frame::new()
-        .fill(Color32::from_rgba_unmultiplied(color.r(), color.g(), color.b(), 28))
+        .fill(Color32::from_rgba_unmultiplied(
+            color.r(),
+            color.g(),
+            color.b(),
+            28,
+        ))
         .stroke(Stroke::new(1.0, color))
         .corner_radius(egui::CornerRadius::same(20))
         .inner_margin(egui::Margin::symmetric(8, 4))
@@ -708,12 +946,16 @@ fn metric_card(ui: &mut egui::Ui, label: &str, value: String, caption: &str, acc
 fn quick_action(ui: &mut egui::Ui, title: &str, subtitle: &str, action: impl FnOnce()) {
     let response = ui.add(
         egui::Button::new(
-            egui::RichText::new(format!("{title}\n{subtitle}")).size(11.0).color(TEXT),
+            egui::RichText::new(format!("{title}\n{subtitle}"))
+                .size(11.0)
+                .color(TEXT),
         )
         .fill(PANEL)
         .stroke(Stroke::new(1.0, EDGE)),
     );
-    if response.clicked() { action(); }
+    if response.clicked() {
+        action();
+    }
 }
 
 fn info_row(ui: &mut egui::Ui, label: &str, value: &str, description: &str) {
@@ -728,7 +970,13 @@ fn info_row(ui: &mut egui::Ui, label: &str, value: &str, description: &str) {
     });
 }
 
-fn channel_card(ui: &mut egui::Ui, title: &str, description: &str, availability: &str, accent: Color32) {
+fn channel_card(
+    ui: &mut egui::Ui,
+    title: &str,
+    description: &str,
+    availability: &str,
+    accent: Color32,
+) {
     panel(ui, |ui| {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
@@ -755,16 +1003,30 @@ fn empty_state(ui: &mut egui::Ui, title: &str, description: &str) {
 }
 
 fn touch_preview(ui: &mut egui::Ui, scheme: &str, scale: f32, opacity: f32) {
-    let (rect, _) = ui.allocate_exact_size(Vec2::new(ui.available_width(), 150.0), egui::Sense::hover());
+    let (rect, _) =
+        ui.allocate_exact_size(Vec2::new(ui.available_width(), 150.0), egui::Sense::hover());
     let painter = ui.painter();
-    painter.rect_filled(rect, egui::CornerRadius::same(10), Color32::from_rgb(12, 19, 27));
-    painter.rect_stroke(rect, egui::CornerRadius::same(10), Stroke::new(1.0, EDGE), egui::StrokeKind::Inside);
+    painter.rect_filled(
+        rect,
+        egui::CornerRadius::same(10),
+        Color32::from_rgb(12, 19, 27),
+    );
+    painter.rect_stroke(
+        rect,
+        egui::CornerRadius::same(10),
+        Stroke::new(1.0, EDGE),
+        egui::StrokeKind::Inside,
+    );
     let fill = Color32::from_rgba_unmultiplied(76, 211, 194, (opacity * 255.0) as u8);
     let r = 22.0 * scale;
     let left = rect.left() + 70.0;
     let center_y = rect.center().y;
     if scheme.starts_with("Joystick") {
-        painter.circle_filled(egui::pos2(left, center_y), r * 1.6, Color32::from_rgba_unmultiplied(61, 117, 137, 80));
+        painter.circle_filled(
+            egui::pos2(left, center_y),
+            r * 1.6,
+            Color32::from_rgba_unmultiplied(61, 117, 137, 80),
+        );
         painter.circle_stroke(egui::pos2(left, center_y), r * 1.6, Stroke::new(1.5, fill));
         painter.circle_filled(egui::pos2(left, center_y), r * 0.65, fill);
     } else {
@@ -774,19 +1036,51 @@ fn touch_preview(ui: &mut egui::Ui, scheme: &str, scale: f32, opacity: f32) {
             Stroke::new(1.5, fill),
             egui::StrokeKind::Inside,
         );
-        painter.line_segment([egui::pos2(left - r, center_y), egui::pos2(left + r, center_y)], Stroke::new(1.3, fill));
-        painter.line_segment([egui::pos2(left, center_y - r), egui::pos2(left, center_y + r)], Stroke::new(1.3, fill));
+        painter.line_segment(
+            [
+                egui::pos2(left - r, center_y),
+                egui::pos2(left + r, center_y),
+            ],
+            Stroke::new(1.3, fill),
+        );
+        painter.line_segment(
+            [
+                egui::pos2(left, center_y - r),
+                egui::pos2(left, center_y + r),
+            ],
+            Stroke::new(1.3, fill),
+        );
     }
-    let aim = if scheme.ends_with("Crosshair") { "AIM" } else { "TAP" };
+    let aim = if scheme.ends_with("Crosshair") {
+        "AIM"
+    } else {
+        "TAP"
+    };
     painter.circle_filled(egui::pos2(rect.right() - 74.0, center_y), r * 1.2, fill);
-    painter.text(egui::pos2(rect.right() - 74.0, center_y), egui::Align2::CENTER_CENTER, aim,
-        FontId::proportional(10.0), Color32::from_rgb(10, 30, 33));
-    painter.text(egui::pos2(rect.center().x, rect.bottom() - 12.0), egui::Align2::CENTER_CENTER,
-        scheme, FontId::proportional(10.0), MUTED);
+    painter.text(
+        egui::pos2(rect.right() - 74.0, center_y),
+        egui::Align2::CENTER_CENTER,
+        aim,
+        FontId::proportional(10.0),
+        Color32::from_rgb(10, 30, 33),
+    );
+    painter.text(
+        egui::pos2(rect.center().x, rect.bottom() - 12.0),
+        egui::Align2::CENTER_CENTER,
+        scheme,
+        FontId::proportional(10.0),
+        MUTED,
+    );
 }
 
 fn valid_server_address(value: &str) -> bool {
-    if value.is_empty() || value.contains(char::is_whitespace) { return false; }
-    if value.starts_with(':') || value.ends_with(':') { return false; }
-    value.chars().all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '.' | '-' | ':' | '[' | ']'))
+    if value.is_empty() || value.contains(char::is_whitespace) {
+        return false;
+    }
+    if value.starts_with(':') || value.ends_with(':') {
+        return false;
+    }
+    value
+        .chars()
+        .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '.' | '-' | ':' | '[' | ']'))
 }
