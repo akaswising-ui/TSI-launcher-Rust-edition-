@@ -14,7 +14,7 @@ name = "tsi-orbit"
 path = "src/main.rs"
 
 [dependencies]
-eframe = { version = "0.37", features = ["persistence", "android-native-activity"] }
+eframe = { version = "0.37", default-features = false, features = ["persistence", "android-native-activity", "default_fonts", "wgpu", "clipboard", "links", "wayland", "x11"] }
 serde = { version = "1", features = ["derive"] }
 
 [target.'cfg(target_os = "android")'.dependencies]
