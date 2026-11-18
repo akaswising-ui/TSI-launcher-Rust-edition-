@@ -429,13 +429,8 @@ pub struct Renderer {
                 Err(e) => log::error!("TSI Orbit: no renderer: {e}"),
             }""",
     )
-    replace_once(
-        root,
-        launcher_path,
-        """        if let Some(renderer) = self.renderer.as_ref() {
-            let gpu = renderer.gpu_info();""",
-        """        if let Some(gpu) = self.gpu_info.as_ref() {""",
-    )
+    # GPU diagnostics use an owned clone from Launcher.gpu_info, allowing Apply
+    # to mutate the profile notice without borrowing the renderer.
 
     # Apply the Mali-G52 profile to the pinned game's own settings files.
     # This is opt-in; it changes the real game settings and takes effect next launch.
