@@ -19,6 +19,7 @@ Two renderers are involved:
 
 Mali identification is model-aware, not just a vendor badge:
 - ARM vendor ID / driver strings identify the Mali family.
+- Recognizes reported Mali-T720/T760/T820/T830/T860/T880 (Midgard); G31/G51/G52/G71/G72/G76 (Bifrost); G57/G68/G77/G78/G310/G510/G610/G615/G710/G715 (Valhall); and G620/G625/G720/G725 (5th Gen). Exact model labels are shown only when the adapter/driver string reports them.
 - A reported Mali-G52 is labelled Bifrost; MC2 is shown only when the adapter or driver string actually reports it.
 - ASTC, ETC2 and BC texture-compression features are requested only when wgpu says the selected adapter supports them.
 - The Mali renderer path uses conservative downlevel device limits and exposes the driver's actual limits and downlevel capabilities.
