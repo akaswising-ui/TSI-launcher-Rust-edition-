@@ -7,7 +7,7 @@
 use std::sync::{Arc, Mutex};
 
 use eframe::egui_wgpu::{
-    self, WgpuSetup, WgpuSetupCreateNew,
+    WgpuSetup, WgpuSetupCreateNew,
     wgpu::{self, Adapter, Backend, Backends, DeviceDescriptor, Features, Limits, Surface},
 };
 
@@ -30,7 +30,7 @@ pub struct GpuAdapterReport {
     pub supports_bc: bool,
     pub max_texture_dimension_2d: u32,
     pub max_buffer_size: u64,
-    pub max_storage_buffer_binding_size: u32,
+    pub max_storage_buffer_binding_size: u64,
     pub mali_profile: String,
 }
 
@@ -266,7 +266,6 @@ fn backend_label(backend: Backend) -> &'static str {
         Backend::Dx12 => "Direct3D 12",
         Backend::BrowserWebGpu => "WebGPU",
         Backend::Noop => "No-op",
-        _ => "Other",
     }
 }
 
