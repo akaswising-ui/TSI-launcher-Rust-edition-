@@ -123,12 +123,7 @@ pub fn configure_native_options(
                         .iter()
                         .map(|candidate| {
                             let selected = adapter_key(candidate) == selected_key;
-                            adapter_report(
-                                candidate,
-                                surface,
-                                selected,
-                                selected || can_open_device(candidate),
-                            )
+                            adapter_report(candidate, surface, selected, selected)
                         })
                         .collect::<Vec<_>>();
 
@@ -187,10 +182,6 @@ fn device_descriptor(adapter: &Adapter) -> DeviceDescriptor<'static> {
         required_limits: limits,
         ..Default::default()
     }
-}
-
-fn can_open_device(adapter: &Adapter) -> bool {
-    pollster::block_on(adapter.request_device(&device_descriptor(adapter))).is_ok()
 }
 
 fn adapter_report(
