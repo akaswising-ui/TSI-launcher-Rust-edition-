@@ -13,7 +13,7 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
 
     let gpu_runtime = GpuRuntimeState::default();
     let mut options = eframe::NativeOptions {
-        android_app: Some(app),
+        android_app: Some(app.clone()),
         ..Default::default()
     };
     configure_native_options(&mut options, gpu_runtime.clone());
@@ -21,7 +21,7 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
     if let Err(error) = eframe::run_native(
         "TSI Orbit",
         options,
-        Box::new(move |cc| Ok(Box::new(LauncherApp::new(cc, gpu_runtime.clone())))),
+        Box::new(move |cc| Ok(Box::new(LauncherApp::new_android(cc, gpu_runtime.clone(), app.clone())))),
     ) {
         log::error!("TSI Orbit exited with an error: {error}");
     }
