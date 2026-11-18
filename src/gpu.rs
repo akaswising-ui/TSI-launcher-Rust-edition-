@@ -170,9 +170,10 @@ pub fn configure_native_options(
     }));
 
     setup.device_descriptor = Arc::new(device_descriptor);
-    let mut configuration = eframe::WgpuConfiguration::default();
-    configuration.wgpu_setup = WgpuSetup::CreateNew(setup);
-    options.wgpu_options = configuration;
+    options.wgpu_options = eframe::WgpuConfiguration {
+        wgpu_setup: WgpuSetup::CreateNew(setup),
+        ..Default::default()
+    };
 }
 
 fn device_descriptor(adapter: &Adapter) -> DeviceDescriptor<'static> {
