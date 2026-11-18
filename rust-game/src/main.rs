@@ -1,6 +1,7 @@
 mod world;
 
 use macroquad::prelude::*;
+use std::f32::consts::PI;
 use world::{BlockKind, World, WORLD_SIZE};
 
 const EYE_HEIGHT: f32 = 1.62;
