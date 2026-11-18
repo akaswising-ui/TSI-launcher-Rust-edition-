@@ -259,7 +259,7 @@ impl LauncherApp {
                 ui.vertical(|ui| {
                     ui.label(RichText::new("TSI ORBIT").size(16.0).strong().color(TEXT));
                     ui.label(
-                        RichText::new("RUST EDITION")
+                        RichText::new("RUST LAUNCHER")
                             .size(10.0)
                             .color(TEAL)
                             .strong(),
@@ -373,17 +373,17 @@ impl LauncherApp {
         hero_card(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.vertical(|ui| {
-                    status_chip(ui, "RUST GAME PROJECT", TEAL);
+                    status_chip(ui, "HORIZON GAME CLIENT", BLUE);
                     ui.add_space(8.0);
                     ui.label(
-                        RichText::new("TSI ORBIT CLIENT")
+                        RichText::new("MINECRAFT JAVA EDITION")
                             .size(23.0)
                             .strong()
                             .color(TEXT),
                     );
                     ui.label(
                         RichText::new(
-                            "TSI Rust Edition is an independent Rust-native 3D voxel sandbox game.",
+                            "The original Horizon Android Rust client runs the real Minecraft Java Edition game. TSI Orbit provides the launcher entry point.",
                         )
                         .size(12.0)
                         .color(MUTED),
@@ -392,11 +392,11 @@ impl LauncherApp {
                     ui.horizontal(|ui| {
                         if ui.add(
                             egui::Button::new(
-                                RichText::new("▶  RUST EDITION").strong().color(Color32::BLACK),
+                                RichText::new("▶  PLAY JAVA EDITION").strong().color(Color32::BLACK),
                             )
                             .fill(TEAL),
                         ).clicked() {
-                            self.navigate(Page::Game);
+                            self.launch_horizon_client();
                         }
                         if ui.button("Open Versions").clicked() {
                             self.navigate(Page::Versions);
@@ -470,41 +470,55 @@ impl LauncherApp {
                     status_chip(ui, "EARLY FOUNDATION", AMBER);
                 });
             });
-            ui.label(RichText::new("The launcher is separate from the playable TSI Rust Edition game APK. The game is written in Rust and has its own Android app icon.")
+            ui.label(RichText::new("The playable game is the pinned Horizon Android client, configured for TSI Orbit. It launches Minecraft: Java Edition 26.3, not a home-made voxel clone.")
                 .size(12.0).color(MUTED));
         });
     }
 
     fn game_page(&mut self, ui: &mut egui::Ui) {
-        section_title(ui, "TSI RUST EDITION", "Standalone native Rust voxel sandbox");
+        section_title(ui, "MINECRAFT JAVA EDITION", "Powered by the pinned Horizon Android Rust client");
         panel(ui, |ui| {
-            status_chip(ui, "RUST GAME · ANDROID ARM64", TEAL);
+            status_chip(ui, "REAL GAME CLIENT · NOT A CLONE", TEAL);
             ui.add_space(8.0);
-            ui.label(RichText::new("This is a separate playable Rust game, not a Java Edition launcher.").size(15.0).strong().color(TEXT));
-            ui.label(RichText::new("Install the TSI Rust Edition game APK, then open the separate TSI Rust Edition app from your Android app drawer. This launcher does not embed a Java runtime or Minecraft client.").size(12.0).color(MUTED));
+            ui.label(
+                RichText::new("This integrates the existing Horizon Android client. The game itself is Minecraft: Java Edition 26.3, rendered and run by the native Rust client.")
+                    .size(14.0).strong().color(TEXT),
+            );
+            ui.label(
+                RichText::new("Install the companion TSI Orbit game-client APK once. Then the PLAY button on Home opens that client from this launcher. Minecraft game files are prepared by the client and require a valid Java Edition entitlement.")
+                    .size(12.0).color(MUTED),
+            );
             ui.add_space(8.0);
-            ui.label(RichText::new("v0.1.0 gameplay: first-person movement, procedural block terrain, jumping, sprinting, mining, placing and five hotbar blocks.").size(11.0).color(BLUE));
+            ui.label(
+                RichText::new("Companion package: com.tsi.orbit.game")
+                    .size(11.0).color(BLUE),
+            );
+            if ui.add(
+                egui::Button::new(
+                    RichText::new("▶  OPEN HORIZON CLIENT").strong().color(Color32::BLACK),
+                ).fill(TEAL),
+            ).clicked() {
+                self.launch_horizon_client();
+            }
         });
-        section_title(ui, "INPUT", "Phone and desktop");
-        info_row(ui, "Android", "On-screen controls", "Move pad, look drag, jump, mine, place");
-        info_row(ui, "Desktop", "WASD + mouse", "Space to jump · 1–5 selects a block");
-        section_title(ui, "NOT INCLUDED YET", "No fake feature claims");
-        info_row(ui, "World saving", "Not implemented", "Generated world currently lives in memory");
-        info_row(ui, "Multiplayer", "Not implemented", "Server list is only a saved address book");
-        info_row(ui, "Game renderer", "OpenGL ES", "Vulkan game renderer is a later task");
-        info_row(ui, "Compatibility", "Independent TSI game", "No Java Edition worlds, servers or .jar mods");
+        section_title(ui, "GAME SUPPORT", "Features supplied by the actual engine");
+        info_row(ui, "Edition", "Java Edition 26.3", "Pinned Android Rust client");
+        info_row(ui, "Rendering", "Vulkan → OpenGL ES", "Engine Auto API fallback");
+        info_row(ui, "Touch / controller", "Engine native", "Client layouts and gamepad support");
+        info_row(ui, "Worlds / multiplayer", "Engine native", "Actual game client systems");
+        info_row(ui, "Java runtime", "Not used for gameplay", "Bundled runtime is for resource preparation only");
     }
 
     fn versions_page(&mut self, ui: &mut egui::Ui) {
         section_title(ui, "VERSIONS", "Builds and runtime channels");
         panel(ui, |ui| {
             ui.label(
-                RichText::new("TSI Rust Edition is packaged as a separate Android game APK.")
+                RichText::new("Horizon Android Rust client · Minecraft Java Edition 26.3.")
                     .size(15.0)
                     .strong()
                     .color(TEXT),
             );
-            ui.label(RichText::new("Only TSI-native Rust game builds belong here. No Java runtime or Minecraft game files are downloaded by this project.")
+            ui.label(RichText::new("Only pinned, verified TSI Orbit client builds are listed here. The client retrieves authorised game resources for the selected Java Edition profile.")
                 .size(12.0).color(MUTED));
         });
         section_title(ui, "CHANNELS", "Independent update tracks");
