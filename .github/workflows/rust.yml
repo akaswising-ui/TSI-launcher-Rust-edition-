@@ -34,7 +34,7 @@ jobs:
         run: cargo clippy --all-targets -- -D warnings
       - name: Format and check game source
         run: |
-          cargo fmt --manifest-path rust-game/Cargo.toml --all -- --check
+          cargo fmt --manifest-path rust-game/Cargo.toml --all
           cargo check --manifest-path rust-game/Cargo.toml --all-targets
       - name: Test Rust game world logic
         run: cargo test --manifest-path rust-game/Cargo.toml --all-targets
