@@ -10,6 +10,8 @@ This matrix distinguishes tested source/build work from features supplied by the
 | Game renderer | Pinned client renderer with its Auto Vulkan → GLES fallback | Per-device testing, frame pacing and driver workarounds |
 | Android Vulkan install requirement | Manifest advertises Vulkan 1.0 as optional | Devices with broken Vulkan and GLES drivers still cannot render |
 | Mali identification | Vendor ID and adapter/driver string detection in TSI launcher renderer | Mali names/driver behaviour vary by SoC/OEM; no one-size-fits-all profile |
+| Mali GPU model / architecture | Detects ARM Mali family and identifies Mali-G52 / MC2 where driver strings report it; labels G52 as Bifrost; reports shader model, downlevel flags, limits and ASTC/ETC2/BC support | Exact model may be hidden by OEM driver; physical Mali driver testing still required |
+| Mali-G52 game preset | Opt-in native Settings action writes the real game options: Performance preset (8 render / 6 simulation chunks), 75% world scale, 60 FPS, VSync and Graphics API Auto | Applies on next game launch; no FPS guarantee; Auto tries Vulkan and falls back to GLES when initialization fails |
 | Touch controls | Pinned game has touch overlay, layouts and settings import/export | Verify across screen sizes and Android versions |
 | Gamepad/controller | Included in pinned Android client | Physical Bluetooth/USB controller test matrix |
 | Worlds/saves | Included in pinned game client | Storage migration/backup tests on real devices |
