@@ -339,39 +339,39 @@ fn classify_mali_gpu(
         .filter(|character| character.is_ascii_alphanumeric())
         .collect();
     let models = [
-        ("Mali-G725", "maliG725", "5th Gen"),
-        ("Mali-G720", "maliG720", "5th Gen"),
-        ("Mali-G625", "maliG625", "5th Gen"),
-        ("Mali-G620", "maliG620", "5th Gen"),
-        ("Mali-G715", "maliG715", "Valhall"),
-        ("Mali-G710", "maliG710", "Valhall"),
-        ("Mali-G615", "maliG615", "Valhall"),
-        ("Mali-G610", "maliG610", "Valhall"),
-        ("Mali-G510", "maliG510", "Valhall"),
-        ("Mali-G310", "maliG310", "Valhall"),
-        ("Mali-G78", "maliG78", "Valhall"),
-        ("Mali-G77", "maliG77", "Valhall"),
-        ("Mali-G68", "maliG68", "Valhall"),
-        ("Mali-G57", "maliG57", "Valhall"),
-        ("Mali-G76", "maliG76", "Bifrost"),
-        ("Mali-G72", "maliG72", "Bifrost"),
-        ("Mali-G71", "maliG71", "Bifrost"),
-        ("Mali-G52", "maliG52", "Bifrost"),
-        ("Mali-G51", "maliG51", "Bifrost"),
-        ("Mali-G31", "maliG31", "Bifrost"),
-        ("Mali-T880", "maliT880", "Midgard"),
-        ("Mali-T860", "maliT860", "Midgard"),
-        ("Mali-T830", "maliT830", "Midgard"),
-        ("Mali-T820", "maliT820", "Midgard"),
-        ("Mali-T760", "maliT760", "Midgard"),
-        ("Mali-T720", "maliT720", "Midgard"),
+        ("Mali-G725", "malig725", "5th Gen"),
+        ("Mali-G720", "malig720", "5th Gen"),
+        ("Mali-G625", "malig625", "5th Gen"),
+        ("Mali-G620", "malig620", "5th Gen"),
+        ("Mali-G715", "malig715", "Valhall"),
+        ("Mali-G710", "malig710", "Valhall"),
+        ("Mali-G615", "malig615", "Valhall"),
+        ("Mali-G610", "malig610", "Valhall"),
+        ("Mali-G510", "malig510", "Valhall"),
+        ("Mali-G310", "malig310", "Valhall"),
+        ("Mali-G78", "malig78", "Valhall"),
+        ("Mali-G77", "malig77", "Valhall"),
+        ("Mali-G68", "malig68", "Valhall"),
+        ("Mali-G57", "malig57", "Valhall"),
+        ("Mali-G76", "malig76", "Bifrost"),
+        ("Mali-G72", "malig72", "Bifrost"),
+        ("Mali-G71", "malig71", "Bifrost"),
+        ("Mali-G52", "malig52", "Bifrost"),
+        ("Mali-G51", "malig51", "Bifrost"),
+        ("Mali-G31", "malig31", "Bifrost"),
+        ("Mali-T880", "malit880", "Midgard"),
+        ("Mali-T860", "malit860", "Midgard"),
+        ("Mali-T830", "malit830", "Midgard"),
+        ("Mali-T820", "malit820", "Midgard"),
+        ("Mali-T760", "malit760", "Midgard"),
+        ("Mali-T720", "malit720", "Midgard"),
     ];
     if let Some((model, token, architecture)) = models
         .iter()
         .copied()
         .find(|(_, token, _)| compact.contains(*token))
     {
-        let is_g52 = token == "maliG52";
+        let is_g52 = token == "malig52";
         let has_mc2 = is_g52 && identity.contains("mc2");
         return Some(MaliGpuDetails {
             model: if has_mc2 {
