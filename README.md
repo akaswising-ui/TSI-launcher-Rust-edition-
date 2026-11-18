@@ -14,12 +14,30 @@ The port includes a Java runtime archive used by its first-run resource preparat
 
 Two renderers are involved:
 
-1. The TSI Orbit launcher UI renderer probes a real surface-compatible wgpu device, tries Vulkan first and tries OpenGL ES if Vulkan surface, adapter or device initialization fails. It reports the selected GPU, vendor, driver/backend and Mali-family detection in launcher Settings.
-2. The native game renderer has its own graphics API selection. Its Auto mode tries Vulkan first and OpenGL ES second on Android.
+1. The TSI Orbit launcher UI renderer probes a real surface-compatible wgpu device, tries Vulkan first and tries OpenGL ES if Vulkan surface, adapter or device initialization fails. It reports the selected GPU, vendor, driver/backend, model string, shader model, downlevel flags, limits and driver-advertised texture formats in Settings.
+2. The native game renderer has its own graphics API selection. On Android, its Auto mode tries Vulkan first and OpenGL ES second.
 
-The Android manifest does not require a Vulkan 1.1 device. Vulkan is optional and advertised at a 1.0 baseline so that devices with older Vulkan support can still install and attempt the OpenGL ES fallback. A driver must still be able to create a working Android surface and wgpu device. A hosted CI build cannot certify a particular Mali driver; physical device testing is required.
+Mali identification is model-aware, not just a vendor badge:
+- ARM vendor ID / driver strings identify the Mali family.
+- A reported Mali-G52 is labelled Bifrost; MC2 is shown only when the adapter or driver string actually reports it.
+- ASTC, ETC2 and BC texture-compression features are requested only when wgpu says the selected adapter supports them.
+- The Mali renderer path uses conservative downlevel device limits and exposes the driver's actual limits and downlevel capabilities.
 
-GPU support is not determined by the word “Mali” alone. The runtime uses adapter/vendor and driver information. The same GPU family can behave differently across Android vendor driver versions. If the Vulkan path fails, the app should continue on GLES when that driver supports it.
+### Mali-G52 one-tap game profile
+
+The native Android launcher's Settings page shows **Apply** when the selected GPU reports Mali-G52. It changes the game's actual settings files, not just the TSI UI preview:
+
+- Engine Performance preset: 8 render-distance chunks and 6 simulation-distance chunks.
+- 75% world render resolution scale.
+- 60 FPS cap and VSync enabled.
+- Graphics API remains **Auto**: Vulkan is tried first and OpenGL ES is used if the Vulkan device/surface cannot initialize.
+- Changes are verified against `options.txt` and `horizon-graphics.txt` and take effect on the next game launch.
+
+This is a conservative starting profile, not a promise of a fixed FPS. A device's Mali driver, thermals, memory pressure, Android version and game scene all affect frame rate. Generic Mali adapters are detected but do not receive the G52-specific profile when their model is unknown.
+
+The Android manifest does not require Vulkan 1.1. Vulkan is optional and advertised at a 1.0 baseline so that devices with older Vulkan support can still install and attempt the OpenGL ES fallback. A driver must still be able to create a working Android surface and wgpu device. A hosted CI build cannot certify a particular Mali driver; physical device testing is required.
+
+GPU support is not determined by the word “Mali” alone. The same GPU family can behave differently across Android vendor driver versions. If the Vulkan path fails, the app should continue on GLES when that driver supports it.
 
 ## Features in the pinned Android client
 
