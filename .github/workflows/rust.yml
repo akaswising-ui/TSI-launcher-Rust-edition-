@@ -35,6 +35,8 @@ jobs:
           retention-days: 7
       - name: Compile all Rust targets
         run: cargo check --all-targets
+      - name: Run Rust unit tests
+        run: cargo test --lib
       - name: Clippy
         run: cargo clippy --all-targets -- -D warnings
 
