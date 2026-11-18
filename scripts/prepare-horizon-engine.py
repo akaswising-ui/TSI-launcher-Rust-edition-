@@ -64,13 +64,13 @@ def main() -> None:
         root,
         "android/app/src/main/AndroidManifest.xml",
         'android:authorities="com.lukagejak.horizon.update"',
-        'android:authorities="com.tsi.orbit.update"',
+        'android:authorities="com.tsi.orbit.game.update"',
     )
     replace_once(
         root,
         "android/app/src/main/java/com/lukagejak/horizon/ApkProvider.java",
         'static final String AUTHORITY = "com.lukagejak.horizon.update";',
-        'static final String AUTHORITY = "com.tsi.orbit.update";',
+        'static final String AUTHORITY = "com.tsi.orbit.game.update";',
     )
     replace_once(
         root,
