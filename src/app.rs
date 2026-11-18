@@ -1,6 +1,8 @@
 use crate::GpuRuntimeState;
 use eframe::egui::{self, Align, Color32, FontId, Layout, RichText, Stroke, Vec2};
 use serde::{Deserialize, Serialize};
+#[cfg(target_os = "android")]
+use winit::platform::android::activity::AndroidApp;
 
 const BG: Color32 = Color32::from_rgb(11, 15, 22);
 const PANEL: Color32 = Color32::from_rgb(18, 25, 35);
@@ -109,10 +111,16 @@ pub struct LauncherApp {
     draft_pack: String,
     notice: String,
     gpu_runtime: GpuRuntimeState,
+    #[cfg(target_os = "android")]
+    android_app: Option<AndroidApp>,
 }
 
 impl LauncherApp {
-    pub fn new(cc: &eframe::CreationContext<'_>, gpu_runtime: GpuRuntimeState) -> Self {
+    fn from_parts(
+        cc: &eframe::CreationContext<'_>,
+        gpu_runtime: GpuRuntimeState,
+        #[cfg(target_os = "android")] android_app: Option<AndroidApp>,
+    ) -> Self {
         configure_theme(&cc.egui_ctx);
         let saved = cc
             .storage
@@ -126,9 +134,102 @@ impl LauncherApp {
             draft_mod_url: String::new(),
             draft_pack: String::new(),
             saved,
-            notice: "Rust launcher ready · TSI Rust Edition is built as a separate game APK".to_owned(),
+            notice: "TSI Orbit · Horizon Java Edition client integration".to_owned(),
             gpu_runtime,
+            #[cfg(target_os = "android")]
+            android_app,
         }
+    }
+
+    #[cfg(not(target_os = "android"))]
+    pub fn new(cc: &eframe::CreationContext<'_>, gpu_runtime: GpuRuntimeState) -> Self {
+        Self::from_parts(cc, gpu_runtime)
+    }
+
+    #[cfg(target_os = "android")]
+    pub fn new_android(
+        cc: &eframe::CreationContext<'_>,
+        gpu_runtime: GpuRuntimeState,
+        android_app: AndroidApp,
+    ) -> Self {
+        Self::from_parts(cc, gpu_runtime, Some(android_app))
+    }
+
+    #[cfg(target_os = "android")]
+    fn launch_horizon_client(&mut self) {
+        const GAME_PACKAGE: &str = "com.tsi.orbit.game";
+        let Some(app) = self.android_app.clone() else {
+            self.notice = "Android game-client context is unavailable.".to_owned();
+            return;
+        };
+
+        app.clone().run_on_java_main_thread(Box::new(move || {
+            let vm = match unsafe { jni::JavaVM::from_raw(app.vm_as_ptr().cast()) } {
+                Ok(vm) => vm,
+                Err(error) => {
+                    log::error!("Could not attach Horizon game launch: {error}");
+                    return;
+                }
+            };
+            let mut env = match vm.attach_current_thread_permanently() {
+                Ok(env) => env,
+                Err(error) => {
+                    log::error!("Could not attach to Android main thread: {error}");
+                    return;
+                }
+            };
+
+            let result = (|| -> jni::errors::Result<()> {
+                use jni::objects::{JObject, JValue};
+
+                let activity = unsafe { JObject::from_raw(app.activity_as_ptr().cast()) };
+                let package_manager = env
+                    .call_method(
+                        &activity,
+                        "getPackageManager",
+                        "()Landroid/content/pm/PackageManager;",
+                        &[],
+                    )?
+                    .l()?;
+                let package_name = env.new_string(GAME_PACKAGE)?;
+                let package_name_obj = JObject::from(package_name);
+                let intent = env
+                    .call_method(
+                        package_manager,
+                        "getLaunchIntentForPackage",
+                        "(Ljava/lang/String;)Landroid/content/Intent;",
+                        &[JValue::Object(&package_name_obj)],
+                    )?
+                    .l()?;
+
+                if intent.is_null() {
+                    log::error!(
+                        "TSI Horizon game client is not installed. Install TSI-Orbit-Game-ARM64.apk first."
+                    );
+                    return Ok(());
+                }
+
+                env.call_method(
+                    activity,
+                    "startActivity",
+                    "(Landroid/content/Intent;)V",
+                    &[JValue::Object(&intent)],
+                )?;
+                Ok(())
+            })();
+
+            if let Err(error) = result {
+                log::error!("Could not open TSI Horizon game client: {error}");
+            }
+        }));
+
+        self.notice = "Opening the installed Horizon Java Edition client…".to_owned();
+    }
+
+    #[cfg(not(target_os = "android"))]
+    fn launch_horizon_client(&mut self) {
+        self.page = Page::Game;
+        self.notice = "On Android, install the companion TSI Horizon game-client APK to launch the real game.".to_owned();
     }
 
     fn navigate(&mut self, page: Page) {
