@@ -50,7 +50,7 @@ Clone the repository including the pinned game engine:
 git clone --recurse-submodules https://github.com/akaswising-ui/TSI-launcher-Rust-edition-.git
 cd TSI-launcher-Rust-edition-
 rustup target add aarch64-linux-android
-./scripts/build-android.sh
+bash scripts/build-android.sh
 ```
 
 The debug-signed APK is written to `build/TSI-Orbit-Rust-ARM64.apk`. To use a different Rust build profile, set `HORIZON_ANDROID_PROFILE` before building. Production signing should use a separately managed keystore; never commit the keystore or its password.
