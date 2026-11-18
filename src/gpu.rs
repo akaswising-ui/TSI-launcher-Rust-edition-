@@ -368,17 +368,18 @@ fn classify_mali_gpu(
     ];
     if let Some((model, token, architecture)) = models
         .iter()
-        .find(|(_, token, _)| compact.contains(token))
+        .copied()
+        .find(|(_, token, _)| compact.contains(*token))
     {
-        let is_g52 = *token == "maliG52";
+        let is_g52 = token == "maliG52";
         let has_mc2 = is_g52 && identity.contains("mc2");
         return Some(MaliGpuDetails {
             model: if has_mc2 {
                 "Mali-G52 MC2".to_owned()
             } else {
-                (*model).to_owned()
+                model.to_owned()
             },
-            architecture: (*architecture).to_owned(),
+            architecture: architecture.to_owned(),
             is_g52,
             recommended_profile: if is_g52 {
                 if has_mc2 {
