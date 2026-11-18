@@ -80,7 +80,7 @@ jobs:
           retention-days: 90
 
   android-game-arm64:
-    name: Playable Rust Java Edition ARM64 APK
+    name: Playable Horizon Java Edition ARM64 APK
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -118,20 +118,20 @@ jobs:
       - name: Verify playable APK identity and runtime payload
         shell: bash
         run: |
-          APK="build/TSI-Orbit-Rust-ARM64.apk"
+          APK="build/TSI-Orbit-Game-ARM64.apk"
           test -s "$APK"
           unzip -l "$APK" | grep -q 'lib/arm64-v8a/libhorizon.so'
           unzip -l "$APK" | grep -q 'assets/horizon.zip'
           unzip -l "$APK" | grep -q 'assets/jre-25.zip'
           unzip -l "$APK" | grep -q 'assets/tsi-orbit-license.txt'
           BADGING="$("$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK")"
-          echo "$BADGING" | grep -q "package: name='com.tsi.orbit'"
-          echo "$BADGING" | grep -q "application-label:'TSI Orbit'"
+          echo "$BADGING" | grep -q "package: name='com.tsi.orbit.game'"
+          echo "$BADGING" | grep -q "application-label:'TSI Orbit Game'"
           echo "Verified playable ARM64 APK: $APK"
       - name: Upload playable Android APK
         uses: actions/upload-artifact@v4
         with:
-          name: TSI-Orbit-Playable-Rust-ARM64
+          name: TSI-Orbit-Game-ARM64
           path: build/TSI-Orbit-Rust-ARM64.apk
           if-no-files-found: error
           retention-days: 90
