@@ -314,7 +314,7 @@ impl LauncherApp {
                         .color(MUTED),
                 );
                 ui.label(
-                    RichText::new("BUILD 0.1.0 · UI PREVIEW")
+                    RichText::new("BUILD 0.1.0 · LAUNCHER")
                         .size(10.0)
                         .color(TEAL),
                 );
