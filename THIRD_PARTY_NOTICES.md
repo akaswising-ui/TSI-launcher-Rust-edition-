@@ -6,11 +6,11 @@ The original TSI Orbit launcher shell, GPU selection module, build integration a
 
 ## Horizon Android Rust game client
 
-The Android Java Edition game client is built from the MIT-licensed `MocLG/horizon-android` repository, pinned as Git submodule `vendor/horizon-android` at commit:
+The Horizon Android Rust Java Edition client is built from the MIT-licensed `MocLG/horizon-android` repository, pinned as Git submodule `vendor/horizon-android` at commit:
 
 `1788803beebf105abe58de72752d08a5f0e0ee76`
 
-The submodule's own `LICENSE` and `THIRD_PARTY_NOTICES.md` are preserved. The build process applies a small, revision-guarded TSI branding and Android GPU compatibility patch. It does not copy Horizon branding or claim that the upstream project belongs to TSI.
+The submodule's own `LICENSE` and `THIRD_PARTY_NOTICES.md` are preserved. The build process applies revision-guarded TSI branding, a separate Android package ID (`com.tsi.orbit.game`), and Android GPU compatibility patches. The TSI launcher app uses `com.tsi.orbit` and starts the companion with an Android Intent. The game engine remains the pinned upstream client; TSI does not replace it with a voxel clone.
 
 ## Dependencies and bundled content in the pinned engine
 
