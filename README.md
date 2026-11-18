@@ -23,10 +23,24 @@ Implemented in Rust:
 
 ## Horizon-inspired capability map
 
-The public Horizon Android feature list describes a native Rust game client plus launcher integrations including Vulkan rendering, touch layouts, local profiles/accounts, verified resource downloads, resource packs, native .hmod mods, servers, sound, clipboard, gamepad / keyboard support, worlds and saves. TSI's first pass exposes the main workspaces and persistent UI controls, but **does not yet implement the game engine or those backend integrations**.
+The public Horizon Android feature list describes a native Rust game client plus launcher integrations including Vulkan rendering, touch layouts, local profiles/accounts, verified resource downloads, resource packs, native .hmod mods, servers, sound, clipboard, gamepad / keyboard support, worlds and saves. TSI uses the same broad capability areas as a roadmap, but does not copy Horizon code, assets, text or exact UI layout.
+
+## GPU and renderer selection
+
+The launcher UI's wgpu renderer now uses this selection order:
+
+1. Enumerate surface-compatible adapters and prefer Vulkan.
+2. Request a real wgpu device with conservative baseline limits for detected Mali adapters.
+3. If Vulkan adapter/device initialization fails, try the OpenGL ES / GL backend.
+4. Enable ASTC, ETC2 or BC texture-compression features only when the selected adapter reports support.
+5. Show the selected GPU model, vendor ID, driver strings, backend, device type, compression features and reported limits in Settings.
+
+Mali detection uses runtime adapter information (ARM vendor ID and GPU/driver strings); the app does not assume every Mali model or vendor driver has the same Vulkan version or extensions. The report shows wgpu-visible capabilities rather than inventing a Vulkan API version that the wgpu adapter metadata does not expose.
+
+**Important:** this currently configures the launcher UI renderer. It is not yet the separate 3D Minecraft game renderer, and a CI build cannot prove that a specific phone's proprietary GPU driver works. The Android device still needs a physical Vulkan/Mali test. If its Vulkan driver cannot create a usable surface/device, the UI selector tries OpenGL ES instead.
 
 Planned engineering phases:
-1. Runtime and device foundation: Rust game-engine decision, ABI / Vulkan capability detection, renderer and lifecycle.
+1. Game runtime and device foundation: independent Rust game-engine decision, game renderer, Vulkan surface/device integration, device lifecycle and physical Mali/Adreno/PowerVR validation. The launcher UI already probes Vulkan and has an OpenGL ES fallback.
 2. Content pipeline: verified HTTPS downloads, resumable transfers, manifest pinning, resource cache and install/rollback.
 3. Library and storage: profiles, worlds, backup/export, resource packs and import.
 4. Mod system: sandbox design, capability manifest, signature/checksum verification and native module loading. Java .jar, Fabric / Forge / Mixin compatibility is not implied.
