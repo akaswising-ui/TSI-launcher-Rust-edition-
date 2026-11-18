@@ -1,4 +1,4 @@
-name: TSI Orbit and Rust Edition CI
+name: TSI Orbit Rust CI
 
 on:
   push:
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   rust-check:
-    name: Rust formatting, compile and tests
+    name: Rust formatting and desktop compile
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,61 +24,72 @@ jobs:
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
-      - name: Format launcher sources
+      - name: Format Rust sources in the CI workspace
         run: cargo fmt --all
-      - name: Check launcher
+      - name: Upload formatted Rust source for repository sync
+        uses: actions/upload-artifact@v4
+        with:
+          name: TSI-Orbit-Rustfmt-Source
+          path: src/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Compile all Rust targets
         run: cargo check --all-targets
-      - name: Test launcher
-        run: cargo test --all-targets
-      - name: Clippy launcher
+      - name: Run Rust unit tests
+        run: cargo test --lib
+      - name: Clippy
         run: cargo clippy --all-targets -- -D warnings
-      - name: Format and check game source
-        run: |
-          cargo fmt --manifest-path rust-game/Cargo.toml --all
-          cargo check --manifest-path rust-game/Cargo.toml --all-targets
-      - name: Test Rust game world logic
-        run: cargo test --manifest-path rust-game/Cargo.toml --all-targets
 
-  android-launcher-arm64:
-    name: TSI Orbit launcher ARM64 APK
+  android-arm64:
+    name: Android ARM64 APK
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android
+          components: rustfmt
       - uses: android-actions/setup-android@v3
         with:
           packages: "platform-tools platforms;android-36 build-tools;36.0.0 ndk;29.0.14206865"
       - uses: Swatinem/rust-cache@v2
       - name: Configure Android NDK
+        shell: bash
         run: |
           echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/29.0.14206865" >> "$GITHUB_ENV"
           echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/29.0.14206865" >> "$GITHUB_ENV"
       - name: Install cargo-apk
         run: cargo install cargo-apk --version 0.10.0
-      - name: Build TSI Orbit ARM64 APK
-        run: bash scripts/build-android.sh
-      - name: Verify launcher APK
+      - name: Build Rust-only ARM64 APK
+        run: cargo apk build --lib --target aarch64-linux-android
+      - name: Verify APK and Rust native library
+        shell: bash
         run: |
-          APK="build/TSI-Orbit-Rust-ARM64.apk"
+          APK="$(find target -type f -path '*/apk/*.apk' | head -n 1)"
+          test -n "$APK"
           test -s "$APK"
-          unzip -Z1 "$APK" | grep -q '^lib/arm64-v8a/libtsi_orbit.so$'
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | grep -q "package: name='com.tsi.orbit'"
-      - uses: actions/upload-artifact@v4
+          unzip -l "$APK" | grep -q 'lib/arm64-v8a/libtsi_orbit.so'
+          echo "Verified debug APK: $APK"
+          echo "APK_PATH=$APK" >> "$GITHUB_ENV"
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
           name: TSI-Orbit-Rust-ARM64
-          path: build/TSI-Orbit-Rust-ARM64.apk
+          path: target/debug/apk/*.apk
           if-no-files-found: error
           retention-days: 90
 
   android-game-arm64:
-    name: TSI Rust Edition playable game ARM64 APK
+    name: Playable Rust Java Edition ARM64 APK
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Rust 1.95 toolchain for cargo-quad-apk
-        run: rustup toolchain install 1.95.0 --profile minimal --target aarch64-linux-android
+        with:
+          submodules: recursive
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+          components: rustfmt
       - uses: android-actions/setup-android@v3
         with:
           packages: "platform-tools platforms;android-35 build-tools;35.0.0 ndk;29.0.14206865"
@@ -86,40 +97,41 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+      - name: Install native build dependencies
+        run: sudo apt-get update && sudo apt-get install -y xz-utils zip unzip curl python3
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
-            rust-game -> rust-game/target
+            vendor/horizon-android -> vendor/horizon-android/target
       - name: Configure Android SDK and NDK
+        shell: bash
         run: |
           echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
           echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/29.0.14206865" >> "$GITHUB_ENV"
           echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/29.0.14206865" >> "$GITHUB_ENV"
-          echo "NDK_HOME=$ANDROID_SDK_ROOT/ndk/29.0.14206865" >> "$GITHUB_ENV"
-      - name: Install Macroquad Android packager
-        run: cargo +1.95.0 install --git https://github.com/hoklims/cargo-quad-apk cargo-quad-apk --locked
-      - name: Build TSI Rust Edition game APK
-        working-directory: rust-game
-        run: cargo +1.95.0 quad-apk build --release
-      - name: Verify standalone Rust game APK
+          echo "HORIZON_ANDROID_PROFILE=android" >> "$GITHUB_ENV"
+          echo "HORIZON_ANDROID_JOBS=2" >> "$GITHUB_ENV"
+      - name: Validate pinned engine patch script
+        run: python3 -m py_compile scripts/prepare-horizon-engine.py
+      - name: Build TSI-branded native Rust game client
+        run: bash scripts/build-android.sh
+      - name: Verify playable APK identity and runtime payload
         shell: bash
         run: |
-          APK="$(find rust-game/target/android-artifacts/release/apk -maxdepth 1 -name '*.apk' -print -quit)"
-          test -n "$APK"
+          APK="build/TSI-Orbit-Rust-ARM64.apk"
           test -s "$APK"
-          unzip -Z1 "$APK" | grep -q '^lib/arm64-v8a/.*\.so$'
+          unzip -l "$APK" | grep -q 'lib/arm64-v8a/libhorizon.so'
+          unzip -l "$APK" | grep -q 'assets/horizon.zip'
+          unzip -l "$APK" | grep -q 'assets/jre-25.zip'
+          unzip -l "$APK" | grep -q 'assets/tsi-orbit-license.txt'
           BADGING="$("$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK")"
-          echo "$BADGING" | grep -q "package: name='com.tsi.rustedition'"
-          if unzip -Z1 "$APK" | grep -Eiq 'horizon\.zip|jre-[0-9]+\.zip'; then
-            echo "Java Edition runtime payload found in Rust Edition APK." >&2
-            exit 1
-          fi
-          mkdir -p build
-          cp "$APK" build/TSI-Rust-Edition-ARM64.apk
-          echo "Verified native Rust game APK: build/TSI-Rust-Edition-ARM64.apk"
-      - uses: actions/upload-artifact@v4
+          echo "$BADGING" | grep -q "package: name='com.tsi.orbit'"
+          echo "$BADGING" | grep -q "application-label:'TSI Orbit'"
+          echo "Verified playable ARM64 APK: $APK"
+      - name: Upload playable Android APK
+        uses: actions/upload-artifact@v4
         with:
-          name: TSI-Rust-Edition-ARM64
-          path: build/TSI-Rust-Edition-ARM64.apk
+          name: TSI-Orbit-Playable-Rust-ARM64
+          path: build/TSI-Orbit-Rust-ARM64.apk
           if-no-files-found: error
           retention-days: 90
