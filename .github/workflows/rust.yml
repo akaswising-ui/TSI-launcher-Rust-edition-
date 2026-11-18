@@ -77,9 +77,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-linux-android
+      - name: Install Rust 1.95 toolchain for cargo-quad-apk
+        run: rustup toolchain install 1.95.0 --profile minimal --target aarch64-linux-android
       - uses: android-actions/setup-android@v3
         with:
           packages: "platform-tools platforms;android-35 build-tools;35.0.0 ndk;29.0.14206865"
@@ -97,10 +96,10 @@ jobs:
           echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/29.0.14206865" >> "$GITHUB_ENV"
           echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/29.0.14206865" >> "$GITHUB_ENV"
       - name: Install Macroquad Android packager
-        run: cargo install cargo-quad-apk --locked
+        run: cargo +1.95.0 install --git https://github.com/hoklims/cargo-quad-apk --locked
       - name: Build TSI Rust Edition game APK
         working-directory: rust-game
-        run: cargo quad-apk build --release
+        run: cargo +1.95.0 quad-apk build --release
       - name: Verify standalone Rust game APK
         shell: bash
         run: |
