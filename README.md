@@ -49,10 +49,10 @@ Install Rust stable and Android SDK / NDK, then:
 ```sh
 rustup target add aarch64-linux-android
 cargo install cargo-apk --version 0.10.0
-cargo apk build --lib --target aarch64-linux-android --release
+cargo apk build --lib --target aarch64-linux-android
 ```
 
-APK output is produced under `target/release/apk/`.
+Debug APK output is produced under `target/debug/apk/`. A signed production release needs a separately managed release keystore; do not commit that key or its password to Git.
 
 ## Copyright and trademarks
 
