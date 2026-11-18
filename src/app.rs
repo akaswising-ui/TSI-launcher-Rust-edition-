@@ -289,7 +289,7 @@ impl LauncherApp {
                     );
                     ui.add_space(12.0);
                     ui.horizontal(|ui| {
-                        if ui.button(
+                        if ui.add(
                             egui::Button::new(
                                 RichText::new("▶  RUST EDITION").strong().color(Color32::BLACK),
                             )
