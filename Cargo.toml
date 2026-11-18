@@ -16,6 +16,8 @@ path = "src/main.rs"
 [dependencies]
 eframe = { version = "0.37", default-features = false, features = ["persistence", "android-native-activity", "default_fonts", "wgpu", "clipboard", "links", "wayland", "x11"] }
 serde = { version = "1", features = ["derive"] }
+pollster = "1.0"
+wgpu = { version = "30", default-features = false, features = ["std", "parking_lot", "vulkan", "gles", "wgsl"] }
 
 [target.'cfg(target_os = "android")'.dependencies]
 android_logger = "0.15"
