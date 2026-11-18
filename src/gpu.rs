@@ -334,17 +334,60 @@ fn classify_mali_gpu(
         return None;
     }
 
-    let g52 = identity.contains("mali-g52") || identity.contains("mali g52");
-    if g52 {
-        let has_mc2 = identity.contains("mc2");
+    let compact: String = identity
+        .chars()
+        .filter(|character| character.is_ascii_alphanumeric())
+        .collect();
+    let models = [
+        ("Mali-G725", "maliG725", "5th Gen"),
+        ("Mali-G720", "maliG720", "5th Gen"),
+        ("Mali-G625", "maliG625", "5th Gen"),
+        ("Mali-G620", "maliG620", "5th Gen"),
+        ("Mali-G715", "maliG715", "Valhall"),
+        ("Mali-G710", "maliG710", "Valhall"),
+        ("Mali-G615", "maliG615", "Valhall"),
+        ("Mali-G610", "maliG610", "Valhall"),
+        ("Mali-G510", "maliG510", "Valhall"),
+        ("Mali-G310", "maliG310", "Valhall"),
+        ("Mali-G78", "maliG78", "Valhall"),
+        ("Mali-G77", "maliG77", "Valhall"),
+        ("Mali-G68", "maliG68", "Valhall"),
+        ("Mali-G57", "maliG57", "Valhall"),
+        ("Mali-G76", "maliG76", "Bifrost"),
+        ("Mali-G72", "maliG72", "Bifrost"),
+        ("Mali-G71", "maliG71", "Bifrost"),
+        ("Mali-G52", "maliG52", "Bifrost"),
+        ("Mali-G51", "maliG51", "Bifrost"),
+        ("Mali-G31", "maliG31", "Bifrost"),
+        ("Mali-T880", "maliT880", "Midgard"),
+        ("Mali-T860", "maliT860", "Midgard"),
+        ("Mali-T830", "maliT830", "Midgard"),
+        ("Mali-T820", "maliT820", "Midgard"),
+        ("Mali-T760", "maliT760", "Midgard"),
+        ("Mali-T720", "maliT720", "Midgard"),
+    ];
+    if let Some((model, token, architecture)) = models
+        .iter()
+        .find(|(_, token, _)| compact.contains(token))
+    {
+        let is_g52 = *token == "maliG52";
+        let has_mc2 = is_g52 && identity.contains("mc2");
         return Some(MaliGpuDetails {
-            model: if has_mc2 { "Mali-G52 MC2" } else { "Mali-G52" }.to_owned(),
-            architecture: "Bifrost".to_owned(),
-            is_g52: true,
-            recommended_profile: if has_mc2 {
-                "Mali-G52 MC2 Performance: 75% render scale, 8/6 chunks, 60 FPS, VSync, Auto API"
+            model: if has_mc2 {
+                "Mali-G52 MC2".to_owned()
             } else {
-                "Mali-G52 Performance: 75% render scale, 8/6 chunks, 60 FPS, VSync, Auto API"
+                (*model).to_owned()
+            },
+            architecture: (*architecture).to_owned(),
+            is_g52,
+            recommended_profile: if is_g52 {
+                if has_mc2 {
+                    "Mali-G52 MC2 Performance: 75% render scale, 8/6 chunks, 60 FPS, VSync, Auto API"
+                } else {
+                    "Mali-G52 Performance: 75% render scale, 8/6 chunks, 60 FPS, VSync, Auto API"
+                }
+            } else {
+                "Generic Mali-safe limits; keep renderer API on Auto; no unverified model-specific tuning"
             }
             .to_owned(),
         });
@@ -390,6 +433,22 @@ mod tests {
         assert_eq!(gpu.model, "Mali-G52");
         assert!(gpu.is_g52);
         assert!(!gpu.model.contains("MC2"));
+    }
+
+    #[test]
+    fn recognizes_bifrost_and_midgard_model_families() {
+        let g31 = classify_mali_gpu(0, "Mali-G31", "", "").unwrap();
+        assert_eq!(g31.architecture, "Bifrost");
+        let t880 = classify_mali_gpu(0, "Mali-T880", "", "").unwrap();
+        assert_eq!(t880.architecture, "Midgard");
+    }
+
+    #[test]
+    fn recognizes_valhall_and_fifth_generation_models() {
+        let g610 = classify_mali_gpu(0, "Mali-G610", "", "").unwrap();
+        assert_eq!(g610.architecture, "Valhall");
+        let g720 = classify_mali_gpu(0, "Mali-G720", "", "").unwrap();
+        assert_eq!(g720.architecture, "5th Gen");
     }
 
     #[test]
