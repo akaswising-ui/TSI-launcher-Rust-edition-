@@ -233,16 +233,52 @@ pub struct Renderer {
                 || identity.contains("mali")
                 || identity.contains("panfrost")
                 || identity.contains("arm limited");
-            let is_mali_g52 = is_mali
-                && (identity.contains("mali-g52") || identity.contains("mali g52"));
-            let mali_model = if is_mali_g52 {
-                if identity.contains("mc2") { "Mali-G52 MC2" } else { "Mali-G52 (variant not reported)" }
-            } else if is_mali {
-                "Mali (model not reported)"
-            } else {
-                "Not Mali"
+            let compact: String = identity
+                .chars()
+                .filter(|character| character.is_ascii_alphanumeric())
+                .collect();
+            let mali_models = [
+                ("Mali-G725", "maliG725", "5th Gen"),
+                ("Mali-G720", "maliG720", "5th Gen"),
+                ("Mali-G625", "maliG625", "5th Gen"),
+                ("Mali-G620", "maliG620", "5th Gen"),
+                ("Mali-G715", "maliG715", "Valhall"),
+                ("Mali-G710", "maliG710", "Valhall"),
+                ("Mali-G615", "maliG615", "Valhall"),
+                ("Mali-G610", "maliG610", "Valhall"),
+                ("Mali-G510", "maliG510", "Valhall"),
+                ("Mali-G310", "maliG310", "Valhall"),
+                ("Mali-G78", "maliG78", "Valhall"),
+                ("Mali-G77", "maliG77", "Valhall"),
+                ("Mali-G68", "maliG68", "Valhall"),
+                ("Mali-G57", "maliG57", "Valhall"),
+                ("Mali-G76", "maliG76", "Bifrost"),
+                ("Mali-G72", "maliG72", "Bifrost"),
+                ("Mali-G71", "maliG71", "Bifrost"),
+                ("Mali-G52", "maliG52", "Bifrost"),
+                ("Mali-G51", "maliG51", "Bifrost"),
+                ("Mali-G31", "maliG31", "Bifrost"),
+                ("Mali-T880", "maliT880", "Midgard"),
+                ("Mali-T860", "maliT860", "Midgard"),
+                ("Mali-T830", "maliT830", "Midgard"),
+                ("Mali-T820", "maliT820", "Midgard"),
+                ("Mali-T760", "maliT760", "Midgard"),
+                ("Mali-T720", "maliT720", "Midgard"),
+            ];
+            let found_mali = mali_models.iter()
+                .find(|(_, token, _)| compact.contains(token));
+            let is_mali_g52 = found_mali.is_some_and(|(_, token, _)| *token == "maliG52");
+            let (mali_model, mali_architecture) = match found_mali {
+                Some((model, "maliG52", _)) if identity.contains("mc2") =>
+                    ("Mali-G52 MC2".to_owned(), "Bifrost".to_owned()),
+                Some((model, _, architecture)) =>
+                    ((*model).to_owned(), (*architecture).to_owned()),
+                None if is_mali => (
+                    "Mali (model not reported)".to_owned(),
+                    "Not identified".to_owned(),
+                ),
+                None => ("Not Mali".to_owned(), "Not applicable".to_owned()),
             };
-            let mali_architecture = if is_mali_g52 { "Bifrost" } else if is_mali { "Not identified" } else { "Not applicable" };
             let adapter_features = adapter.features();
             let adapter_limits = adapter.limits();
             let downlevel = adapter.get_downlevel_capabilities();
@@ -498,9 +534,48 @@ pub struct Renderer {
     if !is_mali {
         return None;
     }
-    if identity.contains("mali-g52") || identity.contains("mali g52") {
-        let model = if identity.contains("mc2") { "Mali-G52 MC2" } else { "Mali-G52 (variant not reported)" };
-        return Some((model.to_owned(), "Bifrost".to_owned()));
+    let compact: String = identity
+        .chars()
+        .filter(|character| character.is_ascii_alphanumeric())
+        .collect();
+    let models = [
+        ("Mali-G725", "maliG725", "5th Gen"),
+        ("Mali-G720", "maliG720", "5th Gen"),
+        ("Mali-G625", "maliG625", "5th Gen"),
+        ("Mali-G620", "maliG620", "5th Gen"),
+        ("Mali-G715", "maliG715", "Valhall"),
+        ("Mali-G710", "maliG710", "Valhall"),
+        ("Mali-G615", "maliG615", "Valhall"),
+        ("Mali-G610", "maliG610", "Valhall"),
+        ("Mali-G510", "maliG510", "Valhall"),
+        ("Mali-G310", "maliG310", "Valhall"),
+        ("Mali-G78", "maliG78", "Valhall"),
+        ("Mali-G77", "maliG77", "Valhall"),
+        ("Mali-G68", "maliG68", "Valhall"),
+        ("Mali-G57", "maliG57", "Valhall"),
+        ("Mali-G76", "maliG76", "Bifrost"),
+        ("Mali-G72", "maliG72", "Bifrost"),
+        ("Mali-G71", "maliG71", "Bifrost"),
+        ("Mali-G52", "maliG52", "Bifrost"),
+        ("Mali-G51", "maliG51", "Bifrost"),
+        ("Mali-G31", "maliG31", "Bifrost"),
+        ("Mali-T880", "maliT880", "Midgard"),
+        ("Mali-T860", "maliT860", "Midgard"),
+        ("Mali-T830", "maliT830", "Midgard"),
+        ("Mali-T820", "maliT820", "Midgard"),
+        ("Mali-T760", "maliT760", "Midgard"),
+        ("Mali-T720", "maliT720", "Midgard"),
+    ];
+    if let Some((model, token, architecture)) = models
+        .iter()
+        .find(|(_, token, _)| compact.contains(token))
+    {
+        let name = if *token == "maliG52" && identity.contains("mc2") {
+            "Mali-G52 MC2"
+        } else {
+            *model
+        };
+        return Some((name.to_owned(), (*architecture).to_owned()));
     }
     Some(("Mali (model not reported)".to_owned(), "Not identified".to_owned()))
 }
