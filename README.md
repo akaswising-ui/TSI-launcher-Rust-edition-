@@ -1,77 +1,66 @@
 # TSI Launcher Rust Edition
 
-**TSI Orbit** is an independent Rust-native launcher foundation for Android and desktop development. Its visual direction takes broad inspiration from modern game launchers: dark surfaces, a focused game hero, clean navigation, profile controls and a compact library. It does not copy Horizon's source code, assets, logos, screenshots, text or exact layout.
+**TSI Orbit** is an independent Android launcher and game-client project. The UI uses an original graphite/teal design system, original vector artwork and TSI branding. It does not copy Horizon branding, screenshots or exact launcher layout.
 
-## Language and platform
+## Android game client
 
-- Application code: **Rust only**.
-- Android entry: Rust `android_main` + Winit NativeActivity backend.
-- UI: eframe / egui, rendered through wgpu.
-- No Java, Kotlin, C++, JavaScript, webview or embedded website code in the application.
-- Android target in the first pass: `aarch64-linux-android` (arm64-v8a).
-- Desktop preview: `cargo run`.
+The repository pins the MIT-licensed Android Rust game-client port in `vendor/horizon-android` at commit `1788803beebf105abe58de72752d08a5f0e0ee76`. This is a specific Android port snapshot, not the newer upstream Horizon source tree and not a promise of every upstream feature.
 
-## Current 0.1.0 foundation
+The pinned engine implements **Minecraft: Java Edition 26.3** as a native Rust game client. It is not Bedrock Edition and does not provide an arbitrary multi-version selector. Its Android port contains a small Java `NativeActivity` bridge for Android-only facilities such as the IME/soft keyboard, clipboard, document picker and sensors. The game logic, game renderer, launcher drawing, input handling and most application code are Rust. Therefore this Android application is not accurately described as 100% Rust source.
 
-Implemented in Rust:
-- Responsive launcher shell with desktop sidebar and compact mobile navigation.
-- Home dashboard, client/runtime status, versions, worlds, native mods, resource packs, servers, touch controls, accounts, downloads and settings pages.
-- Persistent local profiles, saved server addresses, mod URL queue, pack names and UI preferences.
-- Four editable touch scheme presets with button scale / opacity, handedness, sprint options, 360-degree movement and vibration preferences.
-- Honest not-connected states for engine, downloads, account auth and gameplay, rather than pretending these systems already work.
-- Original vector-drawn Orbit artwork and a distinct teal / graphite design system.
+The port includes a Java runtime archive used by its first-run resource preparation pipeline; it is not a Java VM used to run the game client. The actual playable client is Rust.
 
-## Horizon-inspired capability map
+## Mali / Vulkan / OpenGL ES
 
-The public Horizon Android feature list describes a native Rust game client plus launcher integrations including Vulkan rendering, touch layouts, local profiles/accounts, verified resource downloads, resource packs, native .hmod mods, servers, sound, clipboard, gamepad / keyboard support, worlds and saves. TSI uses the same broad capability areas as a roadmap, but does not copy Horizon code, assets, text or exact UI layout.
+Two renderers are involved:
 
-## GPU and renderer selection
+1. The TSI Orbit launcher UI renderer probes a real surface-compatible wgpu device, tries Vulkan first and tries OpenGL ES if Vulkan surface, adapter or device initialization fails. It reports the selected GPU, vendor, driver/backend and Mali-family detection in launcher Settings.
+2. The native game renderer has its own graphics API selection. Its Auto mode tries Vulkan first and OpenGL ES second on Android.
 
-The launcher UI's wgpu renderer now uses this selection order:
+The Android manifest does not require a Vulkan 1.1 device. Vulkan is optional and advertised at a 1.0 baseline so that devices with older Vulkan support can still install and attempt the OpenGL ES fallback. A driver must still be able to create a working Android surface and wgpu device. A hosted CI build cannot certify a particular Mali driver; physical device testing is required.
 
-1. Enumerate surface-compatible adapters and prefer Vulkan.
-2. Request a real wgpu device with conservative baseline limits for detected Mali adapters.
-3. If Vulkan adapter/device initialization fails, try the OpenGL ES / GL backend.
-4. Enable ASTC, ETC2 or BC texture-compression features only when the selected adapter reports support.
-5. Show the selected GPU model, vendor ID, driver strings, backend, device type, compression features and reported limits in Settings.
+GPU support is not determined by the word “Mali” alone. The runtime uses adapter/vendor and driver information. The same GPU family can behave differently across Android vendor driver versions. If the Vulkan path fails, the app should continue on GLES when that driver supports it.
 
-Mali detection uses runtime adapter information (ARM vendor ID and GPU/driver strings); the app does not assume every Mali model or vendor driver has the same Vulkan version or extensions. The report shows wgpu-visible capabilities rather than inventing a Vulkan API version that the wgpu adapter metadata does not expose.
+## Features in the pinned Android client
 
-**Important:** this currently configures the launcher UI renderer. It is not yet the separate 3D Minecraft game renderer, and a CI build cannot prove that a specific phone's proprietary GPU driver works. The Android device still needs a physical Vulkan/Mali test. If its Vulkan driver cannot create a usable surface/device, the UI selector tries OpenGL ES instead.
+The pinned Android client includes the game renderer, worlds and saves, touch controls and layouts, controller/gamepad input, multiplayer/server code, Microsoft account integration, resource packs and the engine's native mod path. The Android launcher UI exposes game preparation, sign-in, update, touch layout import/export and settings. TSI's original launcher shell also exposes its own profiles, version/workspace pages, downloads and diagnostics.
 
-Planned engineering phases:
-1. Game runtime and device foundation: independent Rust game-engine decision, game renderer, Vulkan surface/device integration, device lifecycle and physical Mali/Adreno/PowerVR validation. The launcher UI already probes Vulkan and has an OpenGL ES fallback.
-2. Content pipeline: verified HTTPS downloads, resumable transfers, manifest pinning, resource cache and install/rollback.
-3. Library and storage: profiles, worlds, backup/export, resource packs and import.
-4. Mod system: sandbox design, capability manifest, signature/checksum verification and native module loading. Java .jar, Fabric / Forge / Mixin compatibility is not implied.
-5. Multiplayer and accounts: server protocol support, production OAuth flow, token security and session handoff.
-6. Input and platform: touch editor, keyboard/mouse, controllers, clipboard, AAudio and haptics.
-7. Test and release: compatibility matrix, fuzzing, differential tests, thermal/frame-pacing tests and signed release APKs.
+Feature availability follows the pinned engine snapshot. Do not assume Java `.jar` mod compatibility, Fabric/Forge/NeoForge compatibility, Bedrock support, or all historic Minecraft versions unless separately tested and implemented.
 
-## Build
+## Copyright and licence
 
-### Desktop UI preview
+- TSI-owned code is MIT-licensed under `LICENSE`.
+- The Android game client is pinned to the MIT-licensed port snapshot noted above. Its own license and third-party notices are preserved.
+- Third-party components retain their original licences. See `THIRD_PARTY_NOTICES.md` and `vendor/horizon-android/THIRD_PARTY_NOTICES.md`.
+- No Minecraft game binaries, textures, sounds or account entitlements are redistributed by this repository.
+
+Minecraft is a trademark of Mojang Synergies AB. TSI Orbit is independent and is not an official Minecraft product or approved by or associated with Mojang or Microsoft.
+
+## Build the playable Android ARM64 APK
+
+Prerequisites:
+- Rust stable and the `aarch64-linux-android` target.
+- Android SDK and NDK.
+- JDK 17.
+- `python3`, `xz`, `zip`, `unzip`, `curl` and standard build tools.
+
+Clone the repository including the pinned game engine:
+
+```sh
+git clone --recurse-submodules https://github.com/akaswising-ui/TSI-launcher-Rust-edition-.git
+cd TSI-launcher-Rust-edition-
+rustup target add aarch64-linux-android
+./scripts/build-android.sh
+```
+
+The debug-signed APK is written to `build/TSI-Orbit-Rust-ARM64.apk`. To use a different Rust build profile, set `HORIZON_ANDROID_PROFILE` before building. Production signing should use a separately managed keystore; never commit the keystore or its password.
+
+Microsoft sign-in requires a Microsoft identity app registration configured for the Minecraft/Mojang authorization flow. The player/developer supplies their own approved client ID in the launcher's account settings. The project does not reuse the port author's OAuth application ID.
+
+## UI preview
+
+The separate eframe UI preview can be run on a desktop with:
 
 ```sh
 cargo run
 ```
-
-### Android ARM64 APK
-
-Install Rust stable and Android SDK / NDK, then:
-
-```sh
-rustup target add aarch64-linux-android
-cargo install cargo-apk --version 0.10.0
-cargo apk build --lib --target aarch64-linux-android
-```
-
-Debug APK output is produced under `target/debug/apk/`. A signed production release needs a separately managed release keystore; do not commit that key or its password to Git.
-
-## Copyright and trademarks
-
-TSI Orbit is an independent implementation. It does not contain Horizon source code or Horizon assets, and it does not bundle Minecraft code, sounds, textures, game binaries or account tokens. The UI is drawn with original vector primitives and text.
-
-Minecraft is a trademark of Mojang Synergies AB. TSI Orbit is not an official Minecraft product and is not approved by or associated with Mojang or Microsoft. Users must supply a legally obtained game entitlement and only use game resources distributed through authorised channels.
-
-Third-party Rust crates remain under their own licences; see the dependency licence metadata generated by Cargo. The TSI Orbit code in this repository is licensed under MIT.
