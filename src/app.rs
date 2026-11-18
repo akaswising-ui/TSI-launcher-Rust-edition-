@@ -126,7 +126,7 @@ impl LauncherApp {
             draft_mod_url: String::new(),
             draft_pack: String::new(),
             saved,
-            notice: "Rust UI initialized · game runtime is a separate integration phase".to_owned(),
+            notice: "Rust launcher ready · TSI Rust Edition is built as a separate game APK".to_owned(),
             gpu_runtime,
         }
     }
@@ -272,7 +272,7 @@ impl LauncherApp {
         hero_card(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.vertical(|ui| {
-                    status_chip(ui, "ENGINE NOT CONNECTED", AMBER);
+                    status_chip(ui, "RUST GAME PROJECT", TEAL);
                     ui.add_space(8.0);
                     ui.label(
                         RichText::new("TSI ORBIT CLIENT")
@@ -282,22 +282,21 @@ impl LauncherApp {
                     );
                     ui.label(
                         RichText::new(
-                            "A new native Rust game runtime is planned as a separate component.",
+                            "TSI Rust Edition is an independent Rust-native 3D voxel sandbox game.",
                         )
                         .size(12.0)
                         .color(MUTED),
                     );
                     ui.add_space(12.0);
                     ui.horizontal(|ui| {
-                        let response = ui.add_enabled(
-                            false,
+                        if ui.button(
                             egui::Button::new(
-                                RichText::new("▶  PLAY").strong().color(Color32::BLACK),
+                                RichText::new("▶  RUST EDITION").strong().color(Color32::BLACK),
                             )
                             .fill(TEAL),
-                        );
-                        response
-                            .on_hover_text("Play activates after a game runtime is integrated.");
+                        ).clicked() {
+                            self.navigate(Page::Game);
+                        }
                         if ui.button("Open Versions").clicked() {
                             self.navigate(Page::Versions);
                         }
@@ -370,55 +369,41 @@ impl LauncherApp {
                     status_chip(ui, "EARLY FOUNDATION", AMBER);
                 });
             });
-            ui.label(RichText::new("The launcher UI and preference model are live. Engine installation, resource verification, account sign-in and in-game rendering still need their own tested Rust modules.")
+            ui.label(RichText::new("The launcher is separate from the playable TSI Rust Edition game APK. The game is written in Rust and has its own Android app icon.")
                 .size(12.0).color(MUTED));
         });
     }
 
     fn game_page(&mut self, ui: &mut egui::Ui) {
-        section_title(ui, "GAME", "Client runtime");
+        section_title(ui, "TSI RUST EDITION", "Standalone native Rust voxel sandbox");
         panel(ui, |ui| {
-            status_chip(ui, "NOT INSTALLED", AMBER);
+            status_chip(ui, "RUST GAME · ANDROID ARM64", TEAL);
             ui.add_space(8.0);
-            ui.label(
-                RichText::new("Runtime integration is not part of this UI foundation yet.")
-                    .size(15.0)
-                    .strong()
-                    .color(TEXT),
-            );
-            ui.label(RichText::new("The Horizon feature model separates launcher responsibilities from the Rust game engine. TSI Orbit will keep that boundary explicit rather than showing a fake Play result.")
-                .size(12.0).color(MUTED));
+            ui.label(RichText::new("This is a separate playable Rust game, not a Java Edition launcher.").size(15.0).strong().color(TEXT));
+            ui.label(RichText::new("Install the TSI Rust Edition game APK, then open the separate TSI Rust Edition app from your Android app drawer. This launcher does not embed a Java runtime or Minecraft client.").size(12.0).color(MUTED));
             ui.add_space(8.0);
-            ui.label(RichText::new("Target engine line: Java Edition 26.3 compatibility (to be verified against the engine source and licence before integration).")
-                .size(11.0).color(BLUE));
+            ui.label(RichText::new("v0.1.0 gameplay: first-person movement, procedural block terrain, jumping, sprinting, mining, placing and five hotbar blocks.").size(11.0).color(BLUE));
         });
-        section_title(ui, "RUN CONFIGURATION", "Planned launch inputs");
-        info_row(ui, "Profile", &self.saved.profile_name, "Local identity");
-        info_row(
-            ui,
-            "Graphics",
-            "Adapter default",
-            "Renderer selection not connected",
-        );
-        info_row(ui, "Input", &self.saved.touch_scheme, "Saved touch preset");
-        info_row(
-            ui,
-            "Game files",
-            "Not present",
-            "No copyrighted game data is bundled",
-        );
+        section_title(ui, "INPUT", "Phone and desktop");
+        info_row(ui, "Android", "On-screen controls", "Move pad, look drag, jump, mine, place");
+        info_row(ui, "Desktop", "WASD + mouse", "Space to jump · 1–5 selects a block");
+        section_title(ui, "NOT INCLUDED YET", "No fake feature claims");
+        info_row(ui, "World saving", "Not implemented", "Generated world currently lives in memory");
+        info_row(ui, "Multiplayer", "Not implemented", "Server list is only a saved address book");
+        info_row(ui, "Game renderer", "OpenGL ES", "Vulkan game renderer is a later task");
+        info_row(ui, "Compatibility", "Independent TSI game", "No Java Edition worlds, servers or .jar mods");
     }
 
     fn versions_page(&mut self, ui: &mut egui::Ui) {
         section_title(ui, "VERSIONS", "Builds and runtime channels");
         panel(ui, |ui| {
             ui.label(
-                RichText::new("No client build is installed yet.")
+                RichText::new("TSI Rust Edition is packaged as a separate Android game APK.")
                     .size(15.0)
                     .strong()
                     .color(TEXT),
             );
-            ui.label(RichText::new("This page will list only verified TSI engine builds with checksums and matching Android ABI. Minecraft Java files must come from an authorised copy/source.")
+            ui.label(RichText::new("Only TSI-native Rust game builds belong here. No Java runtime or Minecraft game files are downloaded by this project.")
                 .size(12.0).color(MUTED));
         });
         section_title(ui, "CHANNELS", "Independent update tracks");
@@ -735,7 +720,7 @@ impl LauncherApp {
         panel(ui, |ui| {
             ui.label(RichText::new("Renderer preferences").strong().color(TEXT));
             ui.label(
-                RichText::new("The launcher UI uses the selected wgpu backend. The separate 3D game renderer is not connected yet.")
+                RichText::new("The launcher UI uses wgpu with Vulkan-first / OpenGL ES fallback. The standalone Rust game currently uses Macroquad on Android OpenGL ES; these are separate renderers.")
                     .size(11.0)
                     .color(MUTED),
             );
