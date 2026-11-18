@@ -549,7 +549,6 @@ impl LauncherApp {
 
 impl eframe::App for LauncherApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        ctx.set_visuals(egui::Visuals::dark());
         let width = ctx.content_rect().width();
         let compact = width < 760.0;
 
@@ -610,7 +609,7 @@ fn panel(ui: &mut egui::Ui, add_contents: impl FnOnce(&mut egui::Ui)) {
     egui::Frame::new()
         .fill(PANEL)
         .stroke(Stroke::new(1.0, EDGE))
-        .corner_radius(14.0)
+        .corner_radius(egui::CornerRadius::same(14))
         .inner_margin(egui::Margin::same(14))
         .show(ui, add_contents);
     ui.add_space(7.0);
@@ -620,7 +619,7 @@ fn hero_card(ui: &mut egui::Ui, add_contents: impl FnOnce(&mut egui::Ui)) {
     egui::Frame::new()
         .fill(Color32::from_rgb(20, 43, 51))
         .stroke(Stroke::new(1.0, Color32::from_rgb(45, 105, 107)))
-        .corner_radius(18.0)
+        .corner_radius(egui::CornerRadius::same(18))
         .inner_margin(egui::Margin::same(18))
         .show(ui, add_contents);
 }
@@ -630,13 +629,13 @@ fn brand_mark(ui: &mut egui::Ui) {
     let painter = ui.painter();
     painter.circle_filled(rect.center(), 18.0, Color32::from_rgb(21, 73, 76));
     painter.circle_stroke(rect.center(), 15.0, Stroke::new(2.0, TEAL));
-    painter.arc(
-        rect.center(),
-        9.0,
-        0.35,
-        5.2,
-        Stroke::new(2.2, BLUE),
-    );
+    let arc_points: Vec<egui::Pos2> = (0..=20)
+        .map(|step| {
+            let angle = 0.35_f32 + (5.2_f32 - 0.35_f32) * step as f32 / 20.0;
+            rect.center() + Vec2::new(angle.cos() * 9.0, angle.sin() * 9.0)
+        })
+        .collect();
+    painter.add(egui::Shape::line(arc_points, Stroke::new(2.2, BLUE)));
     painter.circle_filled(rect.center(), 3.2, TEXT);
 }
 
@@ -657,7 +656,7 @@ fn status_chip(ui: &mut egui::Ui, label: &str, color: Color32) {
     egui::Frame::new()
         .fill(Color32::from_rgba_unmultiplied(color.r(), color.g(), color.b(), 28))
         .stroke(Stroke::new(1.0, color))
-        .corner_radius(20.0)
+        .corner_radius(egui::CornerRadius::same(20))
         .inner_margin(egui::Margin::symmetric(8, 4))
         .show(ui, |ui| {
             ui.label(RichText::new(label).size(9.0).strong().color(color));
@@ -676,7 +675,7 @@ fn metric_card(ui: &mut egui::Ui, label: &str, value: String, caption: &str, acc
     egui::Frame::new()
         .fill(PANEL)
         .stroke(Stroke::new(1.0, EDGE))
-        .corner_radius(12.0)
+        .corner_radius(egui::CornerRadius::same(12))
         .inner_margin(egui::Margin::same(12))
         .show(ui, |ui| {
             ui.set_min_width(width);
@@ -738,8 +737,8 @@ fn empty_state(ui: &mut egui::Ui, title: &str, description: &str) {
 fn touch_preview(ui: &mut egui::Ui, scheme: &str, scale: f32, opacity: f32) {
     let (rect, _) = ui.allocate_exact_size(Vec2::new(ui.available_width(), 150.0), egui::Sense::hover());
     let painter = ui.painter();
-    painter.rect_filled(rect, 10.0, Color32::from_rgb(12, 19, 27));
-    painter.rect_stroke(rect, 10.0, Stroke::new(1.0, EDGE), egui::StrokeKind::Inside);
+    painter.rect_filled(rect, egui::CornerRadius::same(10), Color32::from_rgb(12, 19, 27));
+    painter.rect_stroke(rect, egui::CornerRadius::same(10), Stroke::new(1.0, EDGE), egui::StrokeKind::Inside);
     let fill = Color32::from_rgba_unmultiplied(76, 211, 194, (opacity * 255.0) as u8);
     let r = 22.0 * scale;
     let left = rect.left() + 70.0;
