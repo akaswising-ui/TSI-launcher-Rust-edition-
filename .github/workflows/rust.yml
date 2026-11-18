@@ -97,7 +97,7 @@ jobs:
           echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/29.0.14206865" >> "$GITHUB_ENV"
           echo "NDK_HOME=$ANDROID_SDK_ROOT/ndk/29.0.14206865" >> "$GITHUB_ENV"
       - name: Install Macroquad Android packager
-        run: cargo +1.95.0 install --git https://github.com/hoklims/cargo-quad-apk --package cargo-quad-apk --locked
+        run: cargo +1.95.0 install --git https://github.com/hoklims/cargo-quad-apk cargo-quad-apk --locked
       - name: Build TSI Rust Edition game APK
         working-directory: rust-game
         run: cargo +1.95.0 quad-apk build --release
