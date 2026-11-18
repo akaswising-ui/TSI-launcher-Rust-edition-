@@ -36,3 +36,6 @@ google-services.json
 
 # Rust build output
 /target/
+
+# Python build helper cache
+__pycache__/
