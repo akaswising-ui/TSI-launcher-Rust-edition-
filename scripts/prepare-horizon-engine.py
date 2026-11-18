@@ -266,13 +266,14 @@ pub struct Renderer {
                 ("Mali-T720", "maliT720", "Midgard"),
             ];
             let found_mali = mali_models.iter()
-                .find(|(_, token, _)| compact.contains(token));
-            let is_mali_g52 = found_mali.is_some_and(|(_, token, _)| *token == "maliG52");
+                .copied()
+                .find(|(_, token, _)| compact.contains(*token));
+            let is_mali_g52 = found_mali.is_some_and(|(_, token, _)| token == "maliG52");
             let (mali_model, mali_architecture) = match found_mali {
-                Some((model, "maliG52", _)) if identity.contains("mc2") =>
+                Some((_, "maliG52", _)) if identity.contains("mc2") =>
                     ("Mali-G52 MC2".to_owned(), "Bifrost".to_owned()),
                 Some((model, _, architecture)) =>
-                    ((*model).to_owned(), (*architecture).to_owned()),
+                    (model.to_owned(), architecture.to_owned()),
                 None if is_mali => (
                     "Mali (model not reported)".to_owned(),
                     "Not identified".to_owned(),
@@ -568,14 +569,15 @@ pub struct Renderer {
     ];
     if let Some((model, token, architecture)) = models
         .iter()
-        .find(|(_, token, _)| compact.contains(token))
+        .copied()
+        .find(|(_, token, _)| compact.contains(*token))
     {
-        let name = if *token == "maliG52" && identity.contains("mc2") {
+        let name = if token == "maliG52" && identity.contains("mc2") {
             "Mali-G52 MC2"
         } else {
-            *model
+            model
         };
-        return Some((name.to_owned(), (*architecture).to_owned()));
+        return Some((name.to_owned(), architecture.to_owned()));
     }
     Some(("Mali (model not reported)".to_owned(), "Not identified".to_owned()))
 }
