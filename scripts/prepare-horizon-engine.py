@@ -41,18 +41,18 @@ def main() -> None:
 
     # TSI package identity. Keep the original Java namespace because the upstream
     # NativeActivity bridge is declared in that package; Android install identity
-    # is independently set to com.tsi.orbit.
+    # is independently set to com.tsi.orbit.game.
     replace_once(
         root,
         "android/app/build.gradle",
         "applicationId 'com.lukagejak.horizon'",
-        "applicationId 'com.tsi.orbit'",
+        "applicationId 'com.tsi.orbit.game'",
     )
     replace_once(
         root,
         "android/app/src/main/res/values/strings.xml",
         "<string name=\"app_name\">Horizon</string>",
-        "<string name=\"app_name\">TSI Orbit</string>",
+        "<string name=\"app_name\">TSI Orbit Game</string>",
     )
     replace_once(
         root,
