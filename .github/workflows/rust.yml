@@ -22,6 +22,13 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Format Rust sources in the CI workspace
         run: cargo fmt --all
+      - name: Upload formatted Rust source for repository sync
+        uses: actions/upload-artifact@v4
+        with:
+          name: TSI-Orbit-Rustfmt-Source
+          path: src/
+          if-no-files-found: error
+          retention-days: 7
       - name: Compile all Rust targets
         run: cargo check --all-targets
       - name: Clippy
