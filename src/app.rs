@@ -830,18 +830,34 @@ impl LauncherApp {
                     .size(10.0)
                     .color(MUTED),
                 );
+                ui.label(
+                    RichText::new(format!(
+                        "Shader model: {} · downlevel: {} · WebGPU baseline: {}",
+                        selected.shader_model,
+                        selected.downlevel_flags,
+                        yes_no(selected.webgpu_compliant),
+                    ))
+                    .size(10.0)
+                    .color(MUTED),
+                );
 
                 if selected.is_mali {
                     ui.label(
                         RichText::new(format!(
-                            "Mali compatibility profile: {}",
-                            selected.mali_profile
+                            "Mali model: {} · architecture: {}",
+                            selected.mali_model, selected.mali_architecture
                         ))
-                        .size(10.0)
+                        .size(11.0)
+                        .strong()
                         .color(BLUE),
                     );
                     ui.label(
-                        RichText::new("Vulkan is used only when the Mali driver exposes a surface-compatible adapter and wgpu can open a device. Otherwise the selector tries OpenGL ES.")
+                        RichText::new(format!("Recommended game profile: {}", selected.recommended_profile))
+                            .size(10.0)
+                            .color(BLUE),
+                    );
+                    ui.label(
+                        RichText::new("The app checks surface support and opens a real wgpu device before choosing Vulkan. If the Mali Vulkan driver fails initialization, it retries OpenGL ES; model detection does not override driver capability checks.")
                             .size(10.0)
                             .color(MUTED),
                     );
