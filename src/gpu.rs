@@ -109,7 +109,15 @@ pub fn configure_native_options(
                 Backend::Gl => 1_u8,
                 _ => 2_u8,
             };
-            (backend_rank, info.device_type_rank())
+            let device_type = format!("{:?}", info.device_type).to_ascii_lowercase();
+            let device_rank = if device_type.contains("cpu") {
+                2_u8
+            } else if device_type.contains("virtual") {
+                1_u8
+            } else {
+                0_u8
+            };
+            (backend_rank, device_rank)
         });
 
         let mut failures = Vec::new();
