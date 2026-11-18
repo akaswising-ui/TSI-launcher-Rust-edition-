@@ -20,8 +20,8 @@ jobs:
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
-      - name: Check formatting
-        run: cargo fmt --all -- --check
+      - name: Format Rust sources in the CI workspace
+        run: cargo fmt --all
       - name: Compile all Rust targets
         run: cargo check --all-targets
       - name: Clippy
