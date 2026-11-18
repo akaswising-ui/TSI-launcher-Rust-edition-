@@ -1,22 +1,24 @@
 # Capability matrix
 
-This matrix separates present functionality from the engine/platform work still required.
+This matrix distinguishes tested source/build work from features supplied by the pinned game engine.
 
-| Area | 0.1.0 status | Next implementation |
+| Area | Current implementation | Limitations / validation still required |
 |---|---|---|
-| Rust-native UI shell | Implemented | Accessibility, tablet layout and polish |
-| Navigation workspaces | Implemented | Connect each workspace to backend services |
-| Local player profiles | Local create/select and persistence | Production Microsoft OAuth and secure token storage |
-| Server address book | Local add/remove and persistence | Protocol client, status ping and join |
-| Touch configuration | Four schemes and saved sliders/toggles | Apply settings to live in-game input |
-| Native mod catalogue | HTTPS .hmod URL queue only | Download, hash/signature verification, sandbox runtime and permissions |
-| Resource packs | Local named entries only | Import, manifest validation, hashes and activation |
-| Downloads | UI/status only | Resumable download queue, pinned hashes and retries |
-| Worlds and backups | Workspace placeholder | Safe document-picker import/export and backup |
-| UI renderer / Vulkan | wgpu adapter enumeration, surface compatibility check, real device request, Vulkan-first selection and OpenGL ES fallback | Physical-device testing across Mali, Adreno and PowerVR; game-specific swapchain, frame pacing and 3D renderer integration |
-| Mali GPU diagnostics | Runtime detection by ARM vendor ID / GPU-driver strings; selected model, backend, driver, ASTC/ETC2/BC support and wgpu limits shown in Settings | Confirm on physical Mali devices and tune per-driver workarounds from tested results |
-| Texture compression | Request ASTC / ETC2 / BC only when the selected adapter reports the feature | Connect verified pack transcoding / format selection to the game renderer |
-| Audio/haptics/clipboard | Preference/UI surfaces only | Android Rust platform bridges and tests |
-| Game engine | Not included | Separate engine decision, legal source review and independent implementation/integration |
+| Original TSI launcher UI | Rust eframe/egui shell; responsive navigation; local preferences | Device UX and accessibility testing |
+| TSI GPU diagnostics | Surface-compatible wgpu adapter/device selection; Vulkan-first then GLES; vendor/driver/Mali reporting | Physical device driver verification |
+| Pinned game engine | MIT Android Rust Java Edition client pinned at `1788803beebf105abe58de72752d08a5f0e0ee76` | One game version: Java Edition 26.3; no Bedrock |
+| Game renderer | Pinned client renderer with its Auto Vulkan → GLES fallback | Per-device testing, frame pacing and driver workarounds |
+| Android Vulkan install requirement | Manifest advertises Vulkan 1.0 as optional | Devices with broken Vulkan and GLES drivers still cannot render |
+| Mali identification | Vendor ID and adapter/driver string detection in TSI launcher renderer | Mali names/driver behaviour vary by SoC/OEM; no one-size-fits-all profile |
+| Touch controls | Pinned game has touch overlay, layouts and settings import/export | Verify across screen sizes and Android versions |
+| Gamepad/controller | Included in pinned Android client | Physical Bluetooth/USB controller test matrix |
+| Worlds/saves | Included in pinned game client | Storage migration/backup tests on real devices |
+| Multiplayer | Included in pinned Java client | Server compatibility and LAN/multicast tests |
+| Microsoft account | Pinned OAuth integration; TSI patch removes the port author's default client ID | Configure an approved application client ID; sign-in validation required |
+| Resource packs | Game client pack loading and pack UI | Test pack formats and large pack memory use |
+| Native mods | Engine's native mod mechanism | Do not assume Java .jar/Fabric/Forge compatibility |
+| Downloads/preparation | Pinned Android installer downloads/validates player-entitled Java game resources from Mojang and prepares resources | Requires valid entitlement, network and first-run storage |
+| Android OS bridge | Small Java NativeActivity bridge for soft keyboard, clipboard, file picker and sensors; Rust core | Not a strictly Java-free application |
+| APK/CI | UI preview builds in GitHub Actions | Playable engine APK needs separate engine build job; hosted CI does not prove phone GPU support |
 
-The UI renderer's Vulkan selection does not imply a playable 3D game renderer. Physical Android Mali driver testing is not covered by hosted CI. The user interface does not imply game-engine or backend parity. Nothing in this prototype downloads Minecraft binaries or includes Minecraft assets.
+The pinned Android engine is a Java Edition client, not Bedrock. Its included OpenJDK archive is used by the resource-preparation tools and does not execute the game client. Engine and third-party license notices remain with the APK.
