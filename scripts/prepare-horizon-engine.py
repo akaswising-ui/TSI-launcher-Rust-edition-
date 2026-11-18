@@ -320,6 +320,43 @@ pub struct Renderer {
         let (row, i) = next(&mut y);""",
     )
 
+    # The launcher temporarily takes Renderer out of self while drawing a frame.
+    # Keep its immutable GPU report separately so Settings displays real values.
+    replace_once(
+        root,
+        launcher_path,
+        "    renderer: Option<Renderer>,\n    pointer: Pointer,",
+        "    renderer: Option<Renderer>,\n    gpu_info: Option<super::draw::GpuInfo>,\n    pointer: Pointer,",
+    )
+    replace_once(
+        root,
+        launcher_path,
+        "            renderer: None,\n            pointer: Pointer::default(),",
+        "            renderer: None,\n            gpu_info: None,\n            pointer: Pointer::default(),",
+    )
+    replace_once(
+        root,
+        launcher_path,
+        """            match Renderer::new(window.clone()) {
+                Ok(r) => self.renderer = Some(r),
+                Err(e) => log::error!("Horizon launcher: no renderer: {e}"),
+            }""",
+        """            match Renderer::new(window.clone()) {
+                Ok(r) => {
+                    self.gpu_info = Some(r.gpu_info().clone());
+                    self.renderer = Some(r);
+                }
+                Err(e) => log::error!("TSI Orbit: no renderer: {e}"),
+            }""",
+    )
+    replace_once(
+        root,
+        launcher_path,
+        """        if let Some(renderer) = self.renderer.as_ref() {
+            let gpu = renderer.gpu_info();""",
+        """        if let Some(gpu) = self.gpu_info.as_ref() {""",
+    )
+
     # Rebrand the app's startup logs, without renaming Minecraft data paths.
     replace_once(
         root,
