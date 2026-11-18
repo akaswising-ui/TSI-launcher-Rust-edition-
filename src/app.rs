@@ -1,3 +1,4 @@
+use crate::GpuRuntimeState;
 use eframe::egui::{self, Align, Color32, FontId, Layout, RichText, Stroke, Vec2};
 use serde::{Deserialize, Serialize};
 
@@ -107,10 +108,11 @@ pub struct LauncherApp {
     draft_mod_url: String,
     draft_pack: String,
     notice: String,
+    gpu_runtime: GpuRuntimeState,
 }
 
 impl LauncherApp {
-    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+    pub fn new(cc: &eframe::CreationContext<'_>, gpu_runtime: GpuRuntimeState) -> Self {
         configure_theme(&cc.egui_ctx);
         let saved = cc
             .storage
@@ -125,6 +127,7 @@ impl LauncherApp {
             draft_pack: String::new(),
             saved,
             notice: "Rust UI initialized · game runtime is a separate integration phase".to_owned(),
+            gpu_runtime,
         }
     }
 
@@ -730,28 +733,123 @@ impl LauncherApp {
     fn settings_page(&mut self, ui: &mut egui::Ui) {
         section_title(ui, "SETTINGS", "Rendering and application preferences");
         panel(ui, |ui| {
-            ui.label(RichText::new("Rendering").strong().color(TEXT));
+            ui.label(RichText::new("Renderer preferences").strong().color(TEXT));
             ui.label(
-                RichText::new("UI renderer: eframe / egui. Game renderer: not connected.")
+                RichText::new("The launcher UI uses the selected wgpu backend. The separate 3D game renderer is not connected yet.")
                     .size(11.0)
                     .color(MUTED),
             );
             ui.add(
                 egui::Slider::new(&mut self.saved.resolution_scale, 50.0..=100.0)
-                    .text("Resolution scale"),
+                    .text("Game resolution scale preference"),
             );
             ui.checkbox(&mut self.saved.vsync, "VSync preference");
             ui.add(
-                egui::Slider::new(&mut self.saved.fps_limit, 30..=240).text("Frame cap preference"),
+                egui::Slider::new(&mut self.saved.fps_limit, 30..=240).text("Game frame cap preference"),
             );
             ui.label(
-                RichText::new(
-                    "These are saved preferences, not live Vulkan/game-engine controls yet.",
-                )
-                .size(10.0)
-                .color(MUTED),
+                RichText::new("Resolution scale, VSync and frame cap are saved for the game-renderer phase; they do not change this launcher UI's swapchain.")
+                    .size(10.0)
+                    .color(MUTED),
             );
         });
+
+        let gpu = self.gpu_runtime.snapshot();
+        panel(ui, |ui| {
+            ui.horizontal(|ui| {
+                ui.label(RichText::new("GPU / VULKAN DIAGNOSTICS").strong().color(TEXT));
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    status_chip(
+                        ui,
+                        &gpu.status,
+                        if gpu.error.is_some() { AMBER } else { TEAL },
+                    );
+                });
+            });
+
+            ui.add_space(6.0);
+            ui.label(RichText::new(format!("Selected GPU: {}", gpu.selected_gpu)).strong().color(TEXT));
+            ui.label(RichText::new(format!("Active backend: {}", gpu.selected_backend)).color(TEAL));
+            if let Some(error) = &gpu.error {
+                ui.label(RichText::new(error).size(10.0).color(ROSE));
+            }
+
+            if let Some(selected) = gpu.adapters.iter().find(|adapter| adapter.selected) {
+                ui.horizontal_wrapped(|ui| {
+                    status_chip(
+                        ui,
+                        if selected.is_mali { "ARM MALI DETECTED" } else { "GPU DETECTED" },
+                        if selected.is_mali { BLUE } else { TEAL },
+                    );
+                    status_chip(ui, &format!("VENDOR {}", selected.vendor_label), MUTED);
+                    status_chip(ui, &format!("DEVICE {}", selected.device_type), MUTED);
+                });
+
+                ui.label(
+                    RichText::new(format!("Driver: {} {}", selected.driver, selected.driver_info).trim().to_owned())
+                        .size(11.0)
+                        .color(MUTED),
+                );
+                ui.label(
+                    RichText::new(format!(
+                        "Texture formats: {} · ASTC {} · ETC2 {} · BC {}",
+                        selected.texture_compression,
+                        yes_no(selected.supports_astc),
+                        yes_no(selected.supports_etc2),
+                        yes_no(selected.supports_bc),
+                    ))
+                    .size(11.0)
+                    .color(TEXT),
+                );
+                ui.label(
+                    RichText::new(format!(
+                        "Limits: max 2D texture {} · max buffer {} MiB · storage binding {} MiB",
+                        selected.max_texture_dimension_2d,
+                        selected.max_buffer_size / (1024 * 1024),
+                        selected.max_storage_buffer_binding_size / (1024 * 1024),
+                    ))
+                    .size(10.0)
+                    .color(MUTED),
+                );
+
+                if selected.is_mali {
+                    ui.label(
+                        RichText::new(format!("Mali compatibility profile: {}", selected.mali_profile))
+                            .size(10.0)
+                            .color(BLUE),
+                    );
+                    ui.label(
+                        RichText::new("Vulkan is used only when the Mali driver exposes a surface-compatible adapter and wgpu can open a device. Otherwise the selector tries OpenGL ES.")
+                            .size(10.0)
+                            .color(MUTED),
+                    );
+                }
+            }
+
+            if gpu.adapters.is_empty() {
+                ui.label(
+                    RichText::new("Adapter details will appear after the platform renderer selects a compatible GPU.")
+                        .size(11.0)
+                        .color(MUTED),
+                );
+            } else {
+                ui.add_space(6.0);
+                ui.label(RichText::new("Detected adapters").size(10.0).strong().color(MUTED));
+                for adapter in &gpu.adapters {
+                    ui.horizontal(|ui| {
+                        let marker = if adapter.selected { "●" } else { "○" };
+                        ui.label(RichText::new(marker).color(if adapter.selected { TEAL } else { MUTED }));
+                        ui.label(RichText::new(format!("{} · {}", adapter.name, adapter.backend)).size(10.0).color(TEXT));
+                        if adapter.selected {
+                            status_chip(ui, "ACTIVE", TEAL);
+                        } else if !adapter.surface_compatible {
+                            status_chip(ui, "NO SURFACE", AMBER);
+                        }
+                    });
+                }
+            }
+        });
+
         panel(ui, |ui| {
             ui.label(RichText::new("Privacy and storage").strong().color(TEXT));
             ui.label(RichText::new("Profiles, server addresses and UI preferences are stored in the app's local settings. No telemetry service is configured.")
@@ -1083,4 +1181,8 @@ fn valid_server_address(value: &str) -> bool {
     value
         .chars()
         .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '.' | '-' | ':' | '[' | ']'))
+}
+
+fn yes_no(value: bool) -> &'static str {
+    if value { "supported" } else { "not reported" }
 }
