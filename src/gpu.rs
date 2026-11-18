@@ -188,17 +188,7 @@ fn device_descriptor(adapter: &Adapter) -> DeviceDescriptor<'static> {
         Limits::default()
     };
 
-    let available_features = adapter.features();
-    let mut required_features = Features::empty();
-    for feature in [
-        Features::TEXTURE_COMPRESSION_ASTC,
-        Features::TEXTURE_COMPRESSION_ETC2,
-        Features::TEXTURE_COMPRESSION_BC,
-    ] {
-        if available_features.contains(feature) {
-            required_features |= feature;
-        }
-    }
+    let required_features = requested_texture_compression_features(adapter.features());
 
     DeviceDescriptor {
         label: Some("TSI Orbit WGPU device"),
@@ -206,6 +196,17 @@ fn device_descriptor(adapter: &Adapter) -> DeviceDescriptor<'static> {
         required_limits: limits,
         ..Default::default()
     }
+}
+
+fn requested_texture_compression_features(available: Features) -> Features {
+    [
+        Features::TEXTURE_COMPRESSION_ASTC,
+        Features::TEXTURE_COMPRESSION_ETC2,
+        Features::TEXTURE_COMPRESSION_BC,
+    ]
+    .into_iter()
+    .filter(|feature| available.contains(*feature))
+    .fold(Features::empty(), |enabled, feature| enabled | feature)
 }
 
 fn adapter_report(
@@ -312,5 +313,24 @@ mod tests {
     #[test]
     fn does_not_mark_adreno_as_mali() {
         assert!(!is_mali_adapter(0x5143, "Adreno 610", "Qualcomm", ""));
+    }
+
+    #[test]
+    fn requests_only_reported_texture_compression_features() {
+        let available =
+            Features::TEXTURE_COMPRESSION_ASTC | Features::TEXTURE_COMPRESSION_ETC2;
+        let requested = requested_texture_compression_features(available);
+
+        assert!(requested.contains(Features::TEXTURE_COMPRESSION_ASTC));
+        assert!(requested.contains(Features::TEXTURE_COMPRESSION_ETC2));
+        assert!(!requested.contains(Features::TEXTURE_COMPRESSION_BC));
+    }
+
+    #[test]
+    fn requests_no_texture_features_when_driver_reports_none() {
+        assert_eq!(
+            requested_texture_compression_features(Features::empty()),
+            Features::empty()
+        );
     }
 }
