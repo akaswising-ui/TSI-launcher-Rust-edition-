@@ -114,7 +114,7 @@ jobs:
       - name: Validate pinned engine patch script
         run: python3 -m py_compile scripts/prepare-horizon-engine.py
       - name: Build TSI-branded native Rust game client
-        run: ./scripts/build-android.sh
+        run: bash scripts/build-android.sh
       - name: Verify playable APK identity and runtime payload
         shell: bash
         run: |
