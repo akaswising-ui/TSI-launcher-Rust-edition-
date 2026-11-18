@@ -548,30 +548,47 @@ impl LauncherApp {
 }
 
 impl eframe::App for LauncherApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let width = ctx.content_rect().width();
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        let width = ui.available_width();
         let compact = width < 760.0;
 
-        egui::TopBottomPanel::top("top_bar")
-            .exact_height(48.0)
-            .frame(egui::Frame::new().fill(PANEL).inner_margin(egui::Margin::symmetric(16, 8)))
-            .show(ctx, |ui| self.top_bar(ui));
+        egui::Panel::top("top_bar")
+            .exact_size(48.0)
+            .frame(
+                egui::Frame::new()
+                    .fill(PANEL)
+                    .inner_margin(egui::Margin::symmetric(16, 8)),
+            )
+            .show(ui, |ui| self.top_bar(ui));
 
         if compact {
-            egui::TopBottomPanel::bottom("mobile_navigation")
-                .frame(egui::Frame::new().fill(PANEL).inner_margin(egui::Margin::symmetric(8, 6)))
-                .show(ctx, |ui| self.mobile_nav(ui));
+            egui::Panel::bottom("mobile_navigation")
+                .exact_size(62.0)
+                .frame(
+                    egui::Frame::new()
+                        .fill(PANEL)
+                        .inner_margin(egui::Margin::symmetric(8, 6)),
+                )
+                .show(ui, |ui| self.mobile_nav(ui));
         } else {
-            egui::SidePanel::left("sidebar")
-                .exact_width(204.0)
+            egui::Panel::left("sidebar")
+                .exact_size(204.0)
                 .resizable(false)
-                .frame(egui::Frame::new().fill(PANEL).inner_margin(egui::Margin::same(14)))
-                .show(ctx, |ui| self.sidebar(ui));
+                .frame(
+                    egui::Frame::new()
+                        .fill(PANEL)
+                        .inner_margin(egui::Margin::same(14)),
+                )
+                .show(ui, |ui| self.sidebar(ui));
         }
 
         egui::CentralPanel::default()
-            .frame(egui::Frame::new().fill(BG).inner_margin(egui::Margin::same(if compact { 12 } else { 22 })))
-            .show(ctx, |ui| {
+            .frame(
+                egui::Frame::new()
+                    .fill(BG)
+                    .inner_margin(egui::Margin::same(if compact { 12 } else { 22 })),
+            )
+            .show(ui, |ui| {
                 egui::ScrollArea::vertical()
                     .auto_shrink([false, false])
                     .show(ui, |ui| {
@@ -579,8 +596,11 @@ impl eframe::App for LauncherApp {
                         ui.add_space(24.0);
                         ui.separator();
                         ui.label(RichText::new(&self.notice).size(10.0).color(MUTED));
-                        ui.label(RichText::new("TSI Orbit is an independent project. Minecraft is a trademark of Mojang Synergies AB.")
-                            .size(9.0).color(MUTED));
+                        ui.label(
+                            RichText::new("TSI Orbit is an independent project. Minecraft is a trademark of Mojang Synergies AB.")
+                                .size(9.0)
+                                .color(MUTED),
+                        );
                     });
             });
     }
@@ -591,7 +611,7 @@ impl eframe::App for LauncherApp {
 }
 
 fn configure_theme(ctx: &egui::Context) {
-    let mut style = (*ctx.style()).clone();
+    let mut style = (*ctx.style_of(egui::Theme::Dark)).clone();
     style.visuals = egui::Visuals::dark();
     style.visuals.panel_fill = BG;
     style.visuals.window_fill = PANEL;
@@ -602,7 +622,7 @@ fn configure_theme(ctx: &egui::Context) {
     style.visuals.widgets.active.bg_fill = Color32::from_rgb(34, 97, 94);
     style.visuals.selection.bg_fill = Color32::from_rgb(31, 112, 107);
     style.spacing.item_spacing = Vec2::new(10.0, 9.0);
-    ctx.set_style(style);
+    ctx.set_style_of(egui::Theme::Dark, style);
 }
 
 fn panel(ui: &mut egui::Ui, add_contents: impl FnOnce(&mut egui::Ui)) {
