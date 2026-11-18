@@ -153,6 +153,15 @@ pub struct GpuInfo {
     pub driver_info: String,
     pub backend: String,
     pub is_mali: bool,
+    pub mali_model: String,
+    pub mali_architecture: String,
+    pub is_mali_g52: bool,
+    pub supports_astc: bool,
+    pub supports_etc2: bool,
+    pub supports_bc: bool,
+    pub max_texture_dimension_2d: u32,
+    pub shader_model: String,
+    pub downlevel_flags: String,
 }
 
 /// The window's surface and the launcher's pipeline.
@@ -218,9 +227,39 @@ pub struct Renderer {
                 }
             };
             let info = adapter.get_info();
+            let identity = format!("{} {} {}", info.name, info.driver, info.driver_info)
+                .to_ascii_lowercase();
+            let is_mali = info.vendor == 0x13B5
+                || identity.contains("mali")
+                || identity.contains("panfrost")
+                || identity.contains("arm limited");
+            let is_mali_g52 = is_mali
+                && (identity.contains("mali-g52") || identity.contains("mali g52"));
+            let mali_model = if is_mali_g52 {
+                if identity.contains("mc2") { "Mali-G52 MC2" } else { "Mali-G52 (variant not reported)" }
+            } else if is_mali {
+                "Mali (model not reported)"
+            } else {
+                "Not Mali"
+            };
+            let mali_architecture = if is_mali_g52 { "Bifrost" } else if is_mali { "Not identified" } else { "Not applicable" };
+            let adapter_features = adapter.features();
+            let adapter_limits = adapter.limits();
+            let downlevel = adapter.get_downlevel_capabilities();
+            let required_features = adapter_features
+                & (wgpu::Features::TEXTURE_COMPRESSION_ASTC
+                    | wgpu::Features::TEXTURE_COMPRESSION_ETC2
+                    | wgpu::Features::TEXTURE_COMPRESSION_BC);
+            let required_limits = if is_mali {
+                wgpu::Limits::downlevel_defaults().using_resolution(adapter_limits.clone())
+            } else {
+                adapter_limits.clone()
+            };
             let (device, queue) = match adapter
                 .request_device(&wgpu::DeviceDescriptor {
                     label: Some("TSI Orbit launcher"),
+                    required_features,
+                    required_limits,
                     ..Default::default()
                 })
                 .await
@@ -231,18 +270,22 @@ pub struct Renderer {
                     continue;
                 }
             };
-            let identity = format!("{} {} {}", info.name, info.driver, info.driver_info)
-                .to_ascii_lowercase();
             let gpu = GpuInfo {
                 name: info.name,
                 vendor_id: info.vendor,
                 driver: info.driver,
                 driver_info: info.driver_info,
                 backend: backend_name.to_owned(),
-                is_mali: info.vendor == 0x13B5
-                    || identity.contains("mali")
-                    || identity.contains("panfrost")
-                    || identity.contains("arm limited"),
+                is_mali,
+                mali_model: mali_model.to_owned(),
+                mali_architecture: mali_architecture.to_owned(),
+                is_mali_g52,
+                supports_astc: adapter_features.contains(wgpu::Features::TEXTURE_COMPRESSION_ASTC),
+                supports_etc2: adapter_features.contains(wgpu::Features::TEXTURE_COMPRESSION_ETC2),
+                supports_bc: adapter_features.contains(wgpu::Features::TEXTURE_COMPRESSION_BC),
+                max_texture_dimension_2d: adapter_limits.max_texture_dimension_2d,
+                shader_model: format!("{:?}", downlevel.shader_model),
+                downlevel_flags: format!("{:?}", downlevel.flags),
             };
             selected = Some((instance, surface, device, queue, gpu));
             break;
@@ -293,27 +336,64 @@ pub struct Renderer {
         launcher_path,
         """        // Microsoft account.
         let (row, i) = next(&mut y);""",
-        """        // GPU identity from the launcher's real surface/device open.
-        let (row, i) = next(&mut y);
-        if let Some(renderer) = self.renderer.as_ref() {
-            let gpu = renderer.gpu_info();
-            let detail = format!(
-                "{} · {} · {} · {} · Mali {}",
-                gpu.name,
-                gpu.backend,
-                gpu.driver,
-                gpu.driver_info,
-                if gpu.is_mali { "detected" } else { "not detected" }
+        """        // GPU identity and verified device capabilities from the launch screen's renderer.
+        let row_report = Rect::new(r.x, y, r.w, ROW);
+        let gpu_report = self.gpu_info.clone();
+        if let Some(gpu) = gpu_report {
+            ui.row(
+                row_report,
+                0,
+                "GPU / renderer",
+                &format!("{} · {} · {} · {}", gpu.name, gpu.backend, gpu.driver, gpu.driver_info),
+                0.0,
             );
-            ui.row(row, i, "GPU / renderer", &detail, 0.0);
-        } else {
+            y += ROW;
+            let row = Rect::new(r.x, y, r.w, ROW);
+            ui.row(row, 0, "GPU model / architecture", &format!("{} · {}", gpu.mali_model, gpu.mali_architecture), 0.0);
+            y += ROW;
+            let row = Rect::new(r.x, y, r.w, ROW);
             ui.row(
                 row,
-                i,
+                0,
+                "GPU capabilities",
+                &format!(
+                    "ASTC {} · ETC2 {} · BC {} · max texture {} · shader {} · downlevel {}",
+                    if gpu.supports_astc { "yes" } else { "no" },
+                    if gpu.supports_etc2 { "yes" } else { "no" },
+                    if gpu.supports_bc { "yes" } else { "no" },
+                    gpu.max_texture_dimension_2d,
+                    gpu.shader_model,
+                    gpu.downlevel_flags
+                ),
+                0.0,
+            );
+            y += ROW;
+            if gpu.is_mali_g52 {
+                let row = Rect::new(r.x, y, r.w, ROW);
+                ui.row(row, 0, "Mali-G52 Performance", "8/6 chunks · 75% render scale · 60 FPS · VSync · Auto API", 74.0);
+                if ui.row_button(row, "Apply", false, !self.busy()) {
+                    self.apply_mali_g52_performance_profile();
+                }
+                y += ROW;
+                if let Some(notice) = self.gpu_profile_notice.clone() {
+                    let row = Rect::new(r.x, y, r.w, ROW);
+                    ui.row(row, 0, "Profile status", &notice, 0.0);
+                    y += ROW;
+                }
+            } else if gpu.is_mali {
+                let row = Rect::new(r.x, y, r.w, ROW);
+                ui.row(row, 0, "Mali compatibility", "Generic Mali detected; G52-specific tuning is hidden because the model was not reported.", 0.0);
+                y += ROW;
+            }
+        } else {
+            ui.row(
+                row_report,
+                0,
                 "GPU / renderer",
                 "Waiting for a surface-compatible Vulkan or OpenGL ES device.",
                 0.0,
             );
+            y += ROW;
         }
 
         // Microsoft account.
@@ -326,13 +406,13 @@ pub struct Renderer {
         root,
         launcher_path,
         "    renderer: Option<Renderer>,\n    pointer: Pointer,",
-        "    renderer: Option<Renderer>,\n    gpu_info: Option<super::draw::GpuInfo>,\n    pointer: Pointer,",
+        "    renderer: Option<Renderer>,\n    gpu_info: Option<super::draw::GpuInfo>,\n    gpu_profile_notice: Option<String>,\n    pointer: Pointer,",
     )
     replace_once(
         root,
         launcher_path,
         "            renderer: None,\n            pointer: Pointer::default(),",
-        "            renderer: None,\n            gpu_info: None,\n            pointer: Pointer::default(),",
+        "            renderer: None,\n            gpu_info: None,\n            gpu_profile_notice: None,\n            pointer: Pointer::default(),",
     )
     replace_once(
         root,
@@ -355,6 +435,116 @@ pub struct Renderer {
         """        if let Some(renderer) = self.renderer.as_ref() {
             let gpu = renderer.gpu_info();""",
         """        if let Some(gpu) = self.gpu_info.as_ref() {""",
+    )
+
+    # Apply the Mali-G52 profile to the pinned game's own settings files.
+    # This is opt-in; it changes the real game settings and takes effect next launch.
+    replace_once(
+        root,
+        launcher_path,
+        """impl Launcher {
+    pub fn new(app: AndroidApp, paths: Paths, crash: Option<String>) -> Self {""",
+        """impl Launcher {
+    fn apply_mali_g52_performance_profile(&mut self) {
+        let result = (|| -> std::result::Result<(), String> {
+            std::fs::create_dir_all(&self.paths.home)
+                .map_err(|error| format!("Cannot open the game settings folder: {error}"))?;
+            let options_path = self.paths.home.join("options.txt");
+            let mut settings = horizon_client_render::settings::Settings::load(&options_path);
+            horizon_client_render::graphics::apply_preset(
+                horizon_client_render::graphics::Preset::Performance,
+                &mut settings,
+            );
+            settings.horizon.resolution_scale = 75;
+            settings.max_fps = 60;
+            settings.vsync = true;
+            // Auto: Vulkan first, then GLES if the device/driver cannot initialize Vulkan.
+            settings.horizon.api = horizon_client_render::graphics::GraphicsApi::Auto;
+            settings.save(&options_path);
+
+            let options = std::fs::read_to_string(&options_path)
+                .map_err(|error| format!("Could not verify options.txt: {error}"))?;
+            let graphics = std::fs::read_to_string(self.paths.home.join("horizon-graphics.txt"))
+                .map_err(|error| format!("Could not verify horizon-graphics.txt: {error}"))?;
+            if !options.contains("maxFps:60") || !graphics.contains("resolutionScale:75") {
+                return Err("Settings were written but the profile could not be verified.".to_owned());
+            }
+            Ok(())
+        })();
+        self.gpu_profile_notice = Some(match result {
+            Ok(()) => "Mali-G52 Performance saved: 75% scale, 8/6 chunks, 60 FPS, VSync, Auto Vulkan → GLES. Applies next game launch.".to_owned(),
+            Err(error) => format!("Mali-G52 profile was not confirmed: {error}"),
+        });
+    }
+
+    pub fn new(app: AndroidApp, paths: Paths, crash: Option<String>) -> Self {""",
+    )
+
+    # Record Mali model/architecture and real wgpu downlevel capabilities from
+    # the selected 3D game adapter, not only the small launcher renderer.
+    replace_once(
+        root,
+        "crates/horizon-client-render/src/gfx.rs",
+        """fn describe_adapter(adapter: &wgpu::Adapter) {
+    let info = adapter.get_info();
+    log::info!(
+        "Horizon renderer: {} ({:?}, {:?})",
+        info.name,
+        info.backend,
+        info.device_type
+    );""",
+        """pub(crate) fn mali_gpu_details(info: &wgpu::AdapterInfo) -> Option<(String, String)> {
+    let identity = format!("{} {} {}", info.name, info.driver, info.driver_info)
+        .to_ascii_lowercase();
+    let is_mali = info.vendor == 0x13B5
+        || identity.contains("mali")
+        || identity.contains("panfrost")
+        || identity.contains("arm limited");
+    if !is_mali {
+        return None;
+    }
+    if identity.contains("mali-g52") || identity.contains("mali g52") {
+        let model = if identity.contains("mc2") { "Mali-G52 MC2" } else { "Mali-G52 (variant not reported)" };
+        return Some((model.to_owned(), "Bifrost".to_owned()));
+    }
+    Some(("Mali (model not reported)".to_owned(), "Not identified".to_owned()))
+}
+
+fn describe_adapter(adapter: &wgpu::Adapter) {
+    let info = adapter.get_info();
+    let mali = mali_gpu_details(&info);
+    if let Some((model, architecture)) = &mali {
+        log::info!(
+            "Horizon renderer: ARM GPU profile: {model} / {architecture} / driver {} {}",
+            info.driver,
+            info.driver_info
+        );
+    }
+    let downlevel = adapter.get_downlevel_capabilities();
+    log::info!(
+        "Horizon renderer: {} ({:?}, {:?}) / shader model {:?} / downlevel {:?}",
+        info.name,
+        info.backend,
+        info.device_type,
+        downlevel.shader_model,
+        downlevel.flags
+    );""",
+    )
+
+    # Compressed texture formats are enabled only when the actual game adapter
+    # advertises support. This keeps ASTC/ETC2/BC optional on mobile GPUs.
+    replace_once(
+        root,
+        "crates/horizon-client-render/src/gfx/surface_setup.rs",
+        """                | wgpu::Features::CLEAR_TEXTURE
+                | wgpu::Features::TEXTURE_ATOMIC
+                | wgpu::Features::FLOAT32_FILTERABLE));""",
+        """                | wgpu::Features::CLEAR_TEXTURE
+                | wgpu::Features::TEXTURE_ATOMIC
+                | wgpu::Features::FLOAT32_FILTERABLE
+                | wgpu::Features::TEXTURE_COMPRESSION_ASTC
+                | wgpu::Features::TEXTURE_COMPRESSION_ETC2
+                | wgpu::Features::TEXTURE_COMPRESSION_BC));""",
     )
 
     # Rebrand the app's startup logs, without renaming Minecraft data paths.
