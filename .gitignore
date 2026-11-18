@@ -33,3 +33,9 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# Rust build output
+/target/
+
+# Python build helper cache
+__pycache__/

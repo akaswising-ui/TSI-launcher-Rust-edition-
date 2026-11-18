@@ -1,0 +1,3 @@
+[submodule "vendor/horizon-android"]
+	path = vendor/horizon-android
+	url = https://github.com/MocLG/horizon-android.git
