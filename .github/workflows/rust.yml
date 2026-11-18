@@ -1,0 +1,66 @@
+name: TSI Orbit Rust CI
+
+on:
+  push:
+    branches: [main, "feature/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rust-check:
+    name: Rust formatting and desktop compile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Compile all Rust targets
+        run: cargo check --all-targets
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+  android-arm64:
+    name: Android ARM64 APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+          components: rustfmt
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools platforms;android-36 build-tools;36.0.0 ndk;29.0.14206865"
+      - uses: Swatinem/rust-cache@v2
+      - name: Configure Android NDK
+        shell: bash
+        run: |
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/29.0.14206865" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/29.0.14206865" >> "$GITHUB_ENV"
+      - name: Install cargo-apk
+        run: cargo install cargo-apk --version 0.10.0
+      - name: Build Rust-only ARM64 APK
+        run: cargo apk build --lib --target aarch64-linux-android --release
+      - name: Verify APK and Rust native library
+        shell: bash
+        run: |
+          APK="$(find target -type f -path '*/apk/*.apk' | head -n 1)"
+          test -n "$APK"
+          test -s "$APK"
+          unzip -l "$APK" | grep -q 'lib/arm64-v8a/libtsi_orbit.so'
+          echo "Verified $APK"
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TSI-Orbit-Rust-ARM64
+          path: target/release/apk/*.apk
+          if-no-files-found: error
+          retention-days: 90
