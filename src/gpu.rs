@@ -188,9 +188,21 @@ fn device_descriptor(adapter: &Adapter) -> DeviceDescriptor<'static> {
         Limits::default()
     };
 
+    let available_features = adapter.features();
+    let mut required_features = Features::empty();
+    for feature in [
+        Features::TEXTURE_COMPRESSION_ASTC,
+        Features::TEXTURE_COMPRESSION_ETC2,
+        Features::TEXTURE_COMPRESSION_BC,
+    ] {
+        if available_features.contains(feature) {
+            required_features |= feature;
+        }
+    }
+
     DeviceDescriptor {
         label: Some("TSI Orbit WGPU device"),
-        required_features: Features::empty(),
+        required_features,
         required_limits: limits,
         ..Default::default()
     }
