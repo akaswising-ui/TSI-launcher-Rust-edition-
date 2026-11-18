@@ -21,6 +21,10 @@ pub struct GpuAdapterReport {
     pub backend: String,
     pub device_type: String,
     pub is_mali: bool,
+    pub mali_model: String,
+    pub mali_architecture: String,
+    pub is_mali_g52: bool,
+    pub recommended_profile: String,
     pub surface_compatible: bool,
     pub device_request_ok: bool,
     pub selected: bool,
@@ -31,6 +35,9 @@ pub struct GpuAdapterReport {
     pub max_texture_dimension_2d: u32,
     pub max_buffer_size: u64,
     pub max_storage_buffer_binding_size: u64,
+    pub shader_model: String,
+    pub downlevel_flags: String,
+    pub webgpu_compliant: bool,
     pub mali_profile: String,
 }
 
@@ -218,7 +225,16 @@ fn adapter_report(
     let info = adapter.get_info();
     let features = adapter.features();
     let limits = adapter.limits();
-    let is_mali = is_mali_adapter(info.vendor, &info.name, &info.driver, &info.driver_info);
+    let downlevel = adapter.get_downlevel_capabilities();
+    let mali = classify_mali_gpu(info.vendor, &info.name, &info.driver, &info.driver_info);
+    let is_mali = mali.is_some();
+    let mali_model = mali.as_ref().map_or_else(|| "Not reported".to_owned(), |gpu| gpu.model.clone());
+    let mali_architecture = mali.as_ref().map_or_else(|| "Not reported".to_owned(), |gpu| gpu.architecture.clone());
+    let is_mali_g52 = mali.as_ref().is_some_and(|gpu| gpu.is_g52);
+    let recommended_profile = mali.as_ref().map_or_else(
+        || "No model-specific profile".to_owned(),
+        |gpu| gpu.recommended_profile.clone(),
+    );
     let supports_astc = features.contains(Features::TEXTURE_COMPRESSION_ASTC);
     let supports_etc2 = features.contains(Features::TEXTURE_COMPRESSION_ETC2);
     let supports_bc = features.contains(Features::TEXTURE_COMPRESSION_BC);
@@ -248,6 +264,10 @@ fn adapter_report(
         backend: backend_label(info.backend).to_owned(),
         device_type: format!("{:?}", info.device_type),
         is_mali,
+        mali_model,
+        mali_architecture,
+        is_mali_g52,
+        recommended_profile,
         surface_compatible,
         device_request_ok,
         selected,
@@ -258,8 +278,14 @@ fn adapter_report(
         max_texture_dimension_2d: limits.max_texture_dimension_2d,
         max_buffer_size: limits.max_buffer_size,
         max_storage_buffer_binding_size: limits.max_storage_buffer_binding_size,
-        mali_profile: if is_mali {
-            "Conservative device limits; compression selected from driver-reported support"
+        shader_model: format!("{:?}", downlevel.shader_model),
+        downlevel_flags: format!("{:?}", downlevel.flags),
+        webgpu_compliant: downlevel.is_webgpu_compliant(),
+        mali_profile: if is_mali_g52 {
+            "Bifrost G52: conservative limits, driver-verified compression, Auto Vulkan → GLES"
+                .to_owned()
+        } else if is_mali {
+            "Mali family: conservative limits, optional features only when reported"
                 .to_owned()
         } else {
             "Standard adapter limits".to_owned()
@@ -283,12 +309,57 @@ fn backend_label(backend: Backend) -> &'static str {
     }
 }
 
-fn is_mali_adapter(vendor_id: u32, name: &str, driver: &str, driver_info: &str) -> bool {
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct MaliGpuDetails {
+    model: String,
+    architecture: String,
+    is_g52: bool,
+    recommended_profile: String,
+}
+
+/// Classify the model only when the adapter/driver reports enough information.
+/// Vendor ID alone establishes the ARM GPU family, never a specific Mali model.
+fn classify_mali_gpu(
+    vendor_id: u32,
+    name: &str,
+    driver: &str,
+    driver_info: &str,
+) -> Option<MaliGpuDetails> {
     let identity = format!("{name} {driver} {driver_info}").to_ascii_lowercase();
-    vendor_id == 0x13B5
+    let is_mali = vendor_id == 0x13B5
         || identity.contains("mali")
         || identity.contains("panfrost")
-        || identity.contains("arm limited")
+        || identity.contains("arm limited");
+    if !is_mali {
+        return None;
+    }
+
+    let g52 = identity.contains("mali-g52") || identity.contains("mali g52");
+    if g52 {
+        let has_mc2 = identity.contains("mc2");
+        return Some(MaliGpuDetails {
+            model: if has_mc2 { "Mali-G52 MC2" } else { "Mali-G52" }.to_owned(),
+            architecture: "Bifrost".to_owned(),
+            is_g52: true,
+            recommended_profile: if has_mc2 {
+                "Mali-G52 MC2 Performance: 75% render scale, 8/6 chunks, 60 FPS, VSync, Auto API"
+            } else {
+                "Mali-G52 Performance: 75% render scale, 8/6 chunks, 60 FPS, VSync, Auto API"
+            }
+            .to_owned(),
+        });
+    }
+
+    Some(MaliGpuDetails {
+        model: "Mali (model not reported)".to_owned(),
+        architecture: "Not identified".to_owned(),
+        is_g52: false,
+        recommended_profile: "Generic Mali-safe limits; keep renderer API on Auto".to_owned(),
+    })
+}
+
+fn is_mali_adapter(vendor_id: u32, name: &str, driver: &str, driver_info: &str) -> bool {
+    classify_mali_gpu(vendor_id, name, driver, driver_info).is_some()
 }
 
 #[cfg(test)]
@@ -296,17 +367,33 @@ mod tests {
     use super::*;
 
     #[test]
-    fn recognizes_arm_vendor_id_as_mali_family() {
-        assert!(is_mali_adapter(0x13B5, "Unknown GPU", "", ""));
+    fn recognizes_arm_vendor_id_as_mali_family_without_guessing_a_model() {
+        let gpu = classify_mali_gpu(0x13B5, "Unknown GPU", "", "").unwrap();
+        assert_eq!(gpu.model, "Mali (model not reported)");
+        assert_eq!(gpu.architecture, "Not identified");
+        assert!(!gpu.is_g52);
     }
 
     #[test]
-    fn recognizes_mali_model_string() {
-        assert!(is_mali_adapter(0, "Mali-G52 MC2", "", ""));
+    fn recognizes_mali_g52_mc2_and_bifrost_profile() {
+        let gpu = classify_mali_gpu(0x13B5, "ARM Mali-G52 MC2", "ARM", "r0p0").unwrap();
+        assert_eq!(gpu.model, "Mali-G52 MC2");
+        assert_eq!(gpu.architecture, "Bifrost");
+        assert!(gpu.is_g52);
+        assert!(gpu.recommended_profile.contains("75% render scale"));
+        assert!(gpu.recommended_profile.contains("Auto API"));
     }
 
     #[test]
-    fn recognizes_pan_vk_driver() {
+    fn recognizes_g52_without_inventing_the_mc_variant() {
+        let gpu = classify_mali_gpu(0, "Mali-G52", "ARM", "").unwrap();
+        assert_eq!(gpu.model, "Mali-G52");
+        assert!(gpu.is_g52);
+        assert!(!gpu.model.contains("MC2"));
+    }
+
+    #[test]
+    fn recognizes_pan_vk_driver_as_mali_family() {
         assert!(is_mali_adapter(0, "Unknown", "Panfrost", ""));
     }
 
