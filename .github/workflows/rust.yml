@@ -65,7 +65,7 @@ jobs:
       - name: Install cargo-apk
         run: cargo install cargo-apk --version 0.10.0
       - name: Build Rust-only ARM64 APK
-        run: cargo apk build --lib --target aarch64-linux-android --release
+        run: cargo apk build --lib --target aarch64-linux-android
       - name: Verify APK and Rust native library
         shell: bash
         run: |
@@ -73,11 +73,12 @@ jobs:
           test -n "$APK"
           test -s "$APK"
           unzip -l "$APK" | grep -q 'lib/arm64-v8a/libtsi_orbit.so'
-          echo "Verified $APK"
+          echo "Verified debug APK: $APK"
+          echo "APK_PATH=$APK" >> "$GITHUB_ENV"
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: TSI-Orbit-Rust-ARM64
-          path: target/release/apk/*.apk
+          path: target/debug/apk/*.apk
           if-no-files-found: error
           retention-days: 90
