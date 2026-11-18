@@ -745,7 +745,8 @@ impl LauncherApp {
             );
             ui.checkbox(&mut self.saved.vsync, "VSync preference");
             ui.add(
-                egui::Slider::new(&mut self.saved.fps_limit, 30..=240).text("Game frame cap preference"),
+                egui::Slider::new(&mut self.saved.fps_limit, 30..=240)
+                    .text("Game frame cap preference"),
             );
             ui.label(
                 RichText::new("Resolution scale, VSync and frame cap are saved for the game-renderer phase; they do not change this launcher UI's swapchain.")
@@ -757,7 +758,11 @@ impl LauncherApp {
         let gpu = self.gpu_runtime.snapshot();
         panel(ui, |ui| {
             ui.horizontal(|ui| {
-                ui.label(RichText::new("GPU / VULKAN DIAGNOSTICS").strong().color(TEXT));
+                ui.label(
+                    RichText::new("GPU / VULKAN DIAGNOSTICS")
+                        .strong()
+                        .color(TEXT),
+                );
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     status_chip(
                         ui,
@@ -768,8 +773,14 @@ impl LauncherApp {
             });
 
             ui.add_space(6.0);
-            ui.label(RichText::new(format!("Selected GPU: {}", gpu.selected_gpu)).strong().color(TEXT));
-            ui.label(RichText::new(format!("Active backend: {}", gpu.selected_backend)).color(TEAL));
+            ui.label(
+                RichText::new(format!("Selected GPU: {}", gpu.selected_gpu))
+                    .strong()
+                    .color(TEXT),
+            );
+            ui.label(
+                RichText::new(format!("Active backend: {}", gpu.selected_backend)).color(TEAL),
+            );
             if let Some(error) = &gpu.error {
                 ui.label(RichText::new(error).size(10.0).color(ROSE));
             }
@@ -778,7 +789,11 @@ impl LauncherApp {
                 ui.horizontal_wrapped(|ui| {
                     status_chip(
                         ui,
-                        if selected.is_mali { "ARM MALI DETECTED" } else { "GPU DETECTED" },
+                        if selected.is_mali {
+                            "ARM MALI DETECTED"
+                        } else {
+                            "GPU DETECTED"
+                        },
                         if selected.is_mali { BLUE } else { TEAL },
                     );
                     status_chip(ui, &format!("VENDOR {}", selected.vendor_label), MUTED);
@@ -786,9 +801,13 @@ impl LauncherApp {
                 });
 
                 ui.label(
-                    RichText::new(format!("Driver: {} {}", selected.driver, selected.driver_info).trim().to_owned())
-                        .size(11.0)
-                        .color(MUTED),
+                    RichText::new(
+                        format!("Driver: {} {}", selected.driver, selected.driver_info)
+                            .trim()
+                            .to_owned(),
+                    )
+                    .size(11.0)
+                    .color(MUTED),
                 );
                 ui.label(
                     RichText::new(format!(
@@ -814,9 +833,12 @@ impl LauncherApp {
 
                 if selected.is_mali {
                     ui.label(
-                        RichText::new(format!("Mali compatibility profile: {}", selected.mali_profile))
-                            .size(10.0)
-                            .color(BLUE),
+                        RichText::new(format!(
+                            "Mali compatibility profile: {}",
+                            selected.mali_profile
+                        ))
+                        .size(10.0)
+                        .color(BLUE),
                     );
                     ui.label(
                         RichText::new("Vulkan is used only when the Mali driver exposes a surface-compatible adapter and wgpu can open a device. Otherwise the selector tries OpenGL ES.")
@@ -834,12 +856,25 @@ impl LauncherApp {
                 );
             } else {
                 ui.add_space(6.0);
-                ui.label(RichText::new("Detected adapters").size(10.0).strong().color(MUTED));
+                ui.label(
+                    RichText::new("Detected adapters")
+                        .size(10.0)
+                        .strong()
+                        .color(MUTED),
+                );
                 for adapter in &gpu.adapters {
                     ui.horizontal(|ui| {
                         let marker = if adapter.selected { "●" } else { "○" };
-                        ui.label(RichText::new(marker).color(if adapter.selected { TEAL } else { MUTED }));
-                        ui.label(RichText::new(format!("{} · {}", adapter.name, adapter.backend)).size(10.0).color(TEXT));
+                        ui.label(RichText::new(marker).color(if adapter.selected {
+                            TEAL
+                        } else {
+                            MUTED
+                        }));
+                        ui.label(
+                            RichText::new(format!("{} · {}", adapter.name, adapter.backend))
+                                .size(10.0)
+                                .color(TEXT),
+                        );
                         if adapter.selected {
                             status_chip(ui, "ACTIVE", TEAL);
                         } else if !adapter.surface_compatible {

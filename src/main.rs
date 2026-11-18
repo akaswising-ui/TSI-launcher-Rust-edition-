@@ -13,7 +13,10 @@ fn main() -> eframe::Result {
         "TSI Orbit",
         options,
         Box::new(move |cc| {
-            Ok(Box::new(tsi_orbit::LauncherApp::new(cc, gpu_runtime.clone())))
+            Ok(Box::new(tsi_orbit::LauncherApp::new(
+                cc,
+                gpu_runtime.clone(),
+            )))
         }),
     )
 }

@@ -7,9 +7,8 @@
 use std::sync::{Arc, Mutex};
 
 use eframe::egui_wgpu::{
-    self,
+    self, WgpuSetup, WgpuSetupCreateNew,
     wgpu::{self, Adapter, Backend, Backends, DeviceDescriptor, Features, Limits, Surface},
-    WgpuSetup, WgpuSetupCreateNew,
 };
 
 #[derive(Clone, Debug)]
@@ -146,7 +145,11 @@ pub fn configure_native_options(
                     return Ok(adapter.clone());
                 }
                 Err(error) => {
-                    failures.push(format!("{} ({}): {error}", info.name, backend_label(info.backend)));
+                    failures.push(format!(
+                        "{} ({}): {error}",
+                        info.name,
+                        backend_label(info.backend)
+                    ));
                 }
             }
         }
