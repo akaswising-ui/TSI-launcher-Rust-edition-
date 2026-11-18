@@ -1,26 +1,28 @@
 # Capability matrix
 
-This matrix distinguishes tested source/build work from features supplied by the pinned game engine.
+This table describes code that exists in the TSI repository, not planned buttons or upstream features.
 
 | Area | Current implementation | Limitations / validation still required |
 |---|---|---|
-| Original TSI launcher UI | Rust eframe/egui shell; responsive navigation; local preferences | Device UX and accessibility testing |
-| TSI GPU diagnostics | Surface-compatible wgpu adapter/device selection; Vulkan-first then GLES; vendor/driver/Mali reporting | Physical device driver verification |
-| Pinned game engine | MIT Android Rust Java Edition client pinned at `1788803beebf105abe58de72752d08a5f0e0ee76` | One game version: Java Edition 26.3; no Bedrock |
-| Game renderer | Pinned client renderer with its Auto Vulkan → GLES fallback | Per-device testing, frame pacing and driver workarounds |
-| Android Vulkan install requirement | Manifest advertises Vulkan 1.0 as optional | Devices with broken Vulkan and GLES drivers still cannot render |
-| Mali identification | Vendor ID and adapter/driver string detection in TSI launcher renderer | Mali names/driver behaviour vary by SoC/OEM; no one-size-fits-all profile |
-| Mali GPU model / architecture | Recognizes reported Midgard T-series, Bifrost G31/G51/G52/G71/G72/G76, Valhall G57/G68/G77/G78/G310/G510/G610/G615/G710/G715 and 5th Gen G620/G625/G720/G725 labels; reports Bifrost/Valhall/Midgard/5th Gen plus shader/downlevel/limits/compression support | OEM drivers may hide exact model; model label comes from reported adapter/driver string, physical testing still required |
-| Mali-G52 game preset | Opt-in native Settings action writes the real game options: Performance preset (8 render / 6 simulation chunks), 75% world scale, 60 FPS, VSync and Graphics API Auto | Applies on next game launch; no FPS guarantee; Auto tries Vulkan and falls back to GLES when initialization fails |
-| Touch controls | Pinned game has touch overlay, layouts and settings import/export | Verify across screen sizes and Android versions |
-| Gamepad/controller | Included in pinned Android client | Physical Bluetooth/USB controller test matrix |
-| Worlds/saves | Included in pinned game client | Storage migration/backup tests on real devices |
-| Multiplayer | Included in pinned Java client | Server compatibility and LAN/multicast tests |
-| Microsoft account | Pinned OAuth integration; TSI patch removes the port author's default client ID | Configure an approved application client ID; sign-in validation required |
-| Resource packs | Game client pack loading and pack UI | Test pack formats and large pack memory use |
-| Native mods | Engine's native mod mechanism | Do not assume Java .jar/Fabric/Forge compatibility |
-| Downloads/preparation | Pinned Android installer downloads/validates player-entitled Java game resources from Mojang and prepares resources | Requires valid entitlement, network and first-run storage |
-| Android OS bridge | Small Java NativeActivity bridge for soft keyboard, clipboard, file picker and sensors; Rust core | Not a strictly Java-free application |
-| APK/CI | UI preview builds in GitHub Actions | Playable engine APK needs separate engine build job; hosted CI does not prove phone GPU support |
+| TSI Orbit launcher | Rust eframe/egui app; responsive workspaces; local profile and preference storage | Physical device UI and accessibility testing |
+| Launcher GPU diagnostics | wgpu adapter/device selection; Vulkan-first then OpenGL ES fallback; vendor/driver/Mali reporting | Describes the launcher UI renderer only |
+| TSI Rust Edition game | Separate native Rust Android ARM64 game APK using Macroquad | First playable vertical slice, not a finished survival game |
+| 3D game renderer | Macroquad 3D camera and cube rendering on Android OpenGL ES | Vulkan game renderer is not implemented; test OEM GLES drivers |
+| World generation | Deterministic 40×40 block terrain and simple trees | World currently lives in memory; no persistent save/load |
+| Player | First-person camera, horizontal movement, stepping, gravity, jump and sprint | No advanced collision mesh, swimming, fall damage or animations |
+| Block interaction | Surface raycast, mine/place blocks, five hotbar block types | No item drops, tool durability, crafting or block inventory counts |
+| Android input | On-screen movement pad, look drag, jump, mine and place buttons | Touch latency/layout needs physical phone testing |
+| Desktop input | WASD, mouse look/click interaction, Space jump, number-key hotbar | Desktop is for development/testing |
+| Worlds workspace | Launcher workspace preserved | Save browser/import/export is not connected |
+| Servers | Address book preserved | Rust game multiplayer/network protocol is not implemented |
+| Native mods | Local .hmod URL list preserved | Download, signatures, sandbox and mod execution are not implemented |
+| Resource packs | Local catalogue list preserved | Runtime asset-pack import/validation is not implemented |
+| Accounts | Offline local profiles preserved | No account service is required for the current offline game slice |
+| Java Edition client | Removed from active build and repository submodule configuration | No Java runtime, JVM, Java .jar compatibility or Minecraft server compatibility |
 
-The pinned Android engine is a Java Edition client, not Bedrock. Its included OpenJDK archive is used by the resource-preparation tools and does not execute the game client. Engine and third-party license notices remain with the APK.
+## Release validation gates
+
+- Launcher: formatting, desktop check, tests and Clippy.
+- Game logic: formatting, host compile and terrain/block-editing tests.
+- Android game: separate ARM64 APK build, package identity check and native library presence check.
+- Physical test: install and play on a real Mali device; CI alone cannot certify touch behavior or GPU stability.
